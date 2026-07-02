@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Recall - Remembers what you Forgot</title>
+
+    <link rel="stylesheet" href="/Recall/Frontend/style.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+</head>
+
+<body>
+    <div class="container">
+        <!-- ===========================
+             SIDEBAR
+        ============================ -->
+        <aside class="sidebar">
+            <div>
+                <div class="logo">
+                    <i class="fa-solid fa-brain"></i>
+                    <h1>Recall</h1>
+                </div>
+                <!-- Upload Button -->
+                <button class="upload-btn">
+                    <i class="fa-solid fa-plus"></i>
+                    <div>
+
+                        <h3>Add Memory</h3>
+
+                        <p>Upload</p>
+
+                    </div>
+
+                </button>
+
+                <!-- Navigation -->
+
+                <nav class="menu">
+
+                    <a href="#" class="active">
+
+                        <i class="fa-solid fa-house"></i>
+
+                        Dashboard
+
+                    </a>
+
+                    <a href="#">
+
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+
+                        Timeline
+
+                    </a>
+
+                    <a href="#">
+
+                        <i class="fa-solid fa-image"></i>
+
+                        Memories
+
+                    </a>
+
+                    <a href="#">
+
+                        <i class="fa-solid fa-folder"></i>
+
+                        Collections
+
+                    </a>
+
+                    <a href="#">
+
+                        <i class="fa-solid fa-tag"></i>
+
+                        Tags
+
+                    </a>
+
+                    <a href="#">
+
+                        <i class="fa-solid fa-trash"></i>
+
+                        Trash
+
+                    </a>
+
+                </nav>
+
+                <!-- Sources -->
+
+                <div class="sources">
+
+                    <h4>SOURCES</h4>
+
+                    <div class="source">
+
+                        <span>
+
+                            <i class="fa-regular fa-image"></i>
+
+                            Screenshots
+
+                        </span>
+
+                        <span class="count">128</span>
+
+                    </div>
+
+                    <div class="source">
+
+                        <span>
+
+                            <i class="fa-regular fa-bookmark"></i>
+
+                            Bookmarks
+
+                        </span>
+
+                        <span class="count">43</span>
+
+                    </div>
+
+                    <div class="source">
+
+                        <span>
+
+                            <i class="fa-regular fa-note-sticky"></i>
+
+                            Notes
+
+                        </span>
+
+                        <span class="count">26</span>
+
+                    </div>
+
+                    <div class="source">
+
+                        <span>
+
+                            <i class="fa-solid fa-microphone"></i>
+
+                            Voice Notes
+
+                        </span>
+
+                        <span class="count">8</span>
+
+                    </div>
+
+                    <div class="source">
+
+                        <span>
+
+                            <i class="fa-regular fa-file"></i>
+
+                            PDFs
+
+                        </span>
+
+                        <span class="count">15</span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Bottom Sidebar -->
+
+            <div>
+
+                <div class="storage-card">
+
+                    <h3>Storage Used</h3>
+
+                    <div class="progress">
+
+                        <div class="progress-fill"></div>
+
+                    </div>
+
+                    <p>2.4 GB / 10 GB</p>
+
+                </div>
+
+                <div class="upgrade-card">
+
+                    <i class="fa-solid fa-star"></i>
+
+                    <h3>Upgrade to Recall Pro</h3>
+
+                    <p>
+
+                        Unlimited storage,
+
+                        smarter AI,
+
+                        priority processing.
+
+                    </p>
+
+                    <button>
+
+                        Upgrade Now
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </aside>
+
+        <!-- ===========================
+             MAIN CONTENT
+        ============================ -->
+
+        <main class="content">
+
+            <!-- Top Bar -->
+
+            <header class="topbar">
+
+                <div class="search-box">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input type="text"
+                        placeholder='Search your memories... (e.g. "hackathon deadline", "shopping list")'>
+
+                </div>
+
+                <div class="top-icons">
+
+                    <button>
+
+                        <i class="fa-regular fa-bell"></i>
+
+                    </button>
+
+                    <button>
+
+                        <i class="fa-regular fa-moon"></i>
+
+                    </button>
+
+                    <img src="images/profile.jpg" alt="Profile">
+
+                </div>
+
+            </header>
+
+            <!-- Hero -->
+
+            <section class="hero">
+
+                <div>
+
+                    <h1>
+
+                        Good Evening, Pari 👋
+
+                    </h1>
+
+                    <p>
+
+                        You have 128 memories.
+                        AI organized 12 today.
+
+                    </p>
+
+                </div>
+
+                <button class="customize-btn">
+
+                    <i class="fa-solid fa-sliders"></i>
+
+                    Customize
+
+                </button>
+
+            </section>
+
+            <!-- Statistics -->
+
+            <section class="stats">
+
+                <div class="stat-card">
+
+                    <i class="fa-solid fa-box purple"></i>
+
+                    <h2>128</h2>
+
+                    <p>Total Memories</p>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <i class="fa-solid fa-calendar blue"></i>
+
+                    <h2>12</h2>
+
+                    <p>Today</p>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <i class="fa-solid fa-folder green"></i>
+
+                    <h2>8</h2>
+
+                    <p>Collections</p>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <i class="fa-solid fa-fire orange"></i>
+
+                    <h2>17 Days</h2>
+
+                    <p>Recall Streak</p>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <i class="fa-solid fa-star yellow"></i>
+
+                    <h2>15</h2>
+
+                    <p>Important</p>
+
+                </div>
+
+            </section>
+
+            <!-- Dashboard Grid Starts Here -->
+
+            <div class="dashboard-grid">
+
+                <!-- ===========================
+     LEFT COLUMN
+=========================== -->
+
+                <div class="left-column">
+
+                    <!-- Recent Memories -->
+
+                    <section class="section">
+
+                        <div class="section-header">
+
+                            <h2>Recent Memories</h2>
+
+                            <a href="#">View All</a>
+
+                        </div>
+
+                        <div class="memory-grid" id="memoryGrid">
+
+                        </div>
+
+                        <div class="timeline-item">
+
+                            <div class="timeline-time">
+
+                                1:45 PM
+
+                            </div>
+
+                            <div class="timeline-card">
+
+                                <h4>System Design Notes</h4>
+
+                                <span class="tag study">Study</span>
+
+                            </div>
+
+                        </div>
+
+                        <div class="timeline-item">
+
+                            <div class="timeline-time">
+
+                                11:20 AM
+
+                            </div>
+
+                            <div class="timeline-card">
+
+                                <h4>Manali Trip Itinerary</h4>
+
+                                <span class="tag travel">Travel</span>
+
+                            </div>
+
+                        </div>
+
+                        <div class="timeline-item">
+
+                            <div class="timeline-time">
+
+                                Yesterday • 8:30 PM
+
+                            </div>
+
+                            <div class="timeline-card">
+
+                                <h4>React Performance Notes</h4>
+
+                                <span class="tag study">Study</span>
+
+                            </div>
+
+                        </div>
+
+                </div>
+
+                </section>
+
+            </div>
+
+    </div>
+    <!-- End Dashboard Grid -->
+    <!-- ===========================
+     AI RECOMMENDATIONS
+=========================== -->
+
+    <section class="section ai-section">
+
+        <div class="section-header">
+            <h2>AI Recommendations</h2>
+        </div>
+
+        <div class="ai-grid">
+
+            <div class="ai-card red">
+                <div class="ai-icon">⏰</div>
+                <h3>Deadline Tomorrow</h3>
+                <p>Your Hackathon screenshot mentions a submission due tomorrow.</p>
+                <button>View</button>
+            </div>
+
+            <div class="ai-card yellow">
+                <div class="ai-icon">📂</div>
+                <h3>Organize Memories</h3>
+                <p>You have 27 screenshots related to React. Create a collection?</p>
+                <button>Create</button>
+            </div>
+
+            <div class="ai-card purple">
+                <div class="ai-icon">🧹</div>
+                <h3>Clean Up</h3>
+                <p>12 screenshots haven't been opened in over 6 months.</p>
+                <button>Review</button>
+            </div>
+
+            <div class="ai-card blue">
+                <div class="ai-icon">📄</div>
+                <h3>Duplicates Found</h3>
+                <p>5 screenshots appear identical.</p>
+                <button>Review</button>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ===========================
+     QUICK UPLOAD
+=========================== -->
+
+    <section class="upload-section">
+
+        <div class="upload-box">
+
+            <div class="upload-icon">
+                ☁
+            </div>
+
+            <h3>Quick Upload</h3>
+
+            <p>
+                Drag & Drop screenshots here
+                <br>
+                or
+            </p>
+
+            <input type="file" id="fileInput" hidden>
+
+            <button onclick="document.getElementById('fileInput').click()">
+                Browse Files
+            </button>
+
+        </div>
+
+    </section>
+
+    </main>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
