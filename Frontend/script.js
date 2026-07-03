@@ -1,68 +1,69 @@
 const memoryGrid = document.getElementById("memoryGrid");
+const fileInput = document.getElementById("fileInput");
 
 let memories = [
 
-{
-    title:"NYC CodeQuest Problem Statement",
+    {
+        title: "NYC CodeQuest Problem Statement",
 
-    image:"images/codequest.png",
+        image: "images/codequest.png",
 
-    tag:"Hackathon",
+        tag: "Hackathon",
 
-    collection:"Hackathons",
+        collection: "Hackathons",
 
-    summary:"Contains hackathon rules and judging criteria.",
+        summary: "Contains hackathon rules and judging criteria.",
 
-    time:"Today • 4:32 PM",
+        time: "Today • 4:32 PM",
 
-    pinned:true
-},
+        pinned: true
+    },
 
-{
-    title:"Recall UI Inspiration",
+    {
+        title: "Recall UI Inspiration",
 
-    image:"images/design.png",
+        image: "images/design.png",
 
-    tag:"Design",
+        tag: "Design",
 
-    collection:"Recall",
+        collection: "Recall",
 
-    summary:"Dashboard inspiration for Recall.",
+        summary: "Dashboard inspiration for Recall.",
 
-    time:"Today • 2:10 PM",
+        time: "Today • 2:10 PM",
 
-    pinned:false
-},
+        pinned: false
+    },
 
-{
-    title:"Sony WH-1000XM5",
+    {
+        title: "Sony WH-1000XM5",
 
-    image:"images/headphone.png",
+        image: "images/headphone.png",
 
-    tag:"Shopping",
+        tag: "Shopping",
 
-    collection:"Shopping",
+        collection: "Shopping",
 
-    summary:"Headphone comparison screenshot.",
+        summary: "Headphone comparison screenshot.",
 
-    time:"Yesterday • 9:18 PM",
+        time: "Yesterday • 9:18 PM",
 
-    pinned:false
-}
+        pinned: false
+    }
 
 ];
 
-function renderMemories(){
+function renderMemories() {
 
-memoryGrid.innerHTML="";
+    memoryGrid.innerHTML = "";
 
-memories.forEach(memory=>{
+    memories.forEach(memory => {
 
-const card=document.createElement("div");
+        const card = document.createElement("div");
 
-card.className="memory-card";
+        card.className = "memory-card";
 
-card.innerHTML=`
+        card.innerHTML = `
 
 <img src="${memory.image}">
 
@@ -102,10 +103,46 @@ ${memory.summary}
 
 `;
 
-memoryGrid.appendChild(card);
+        memoryGrid.appendChild(card);
 
-});
+    });
 
 }
 
 renderMemories();
+fileInput.addEventListener("change", async function () {
+
+    const file = fileInput.files[0];
+
+    if (!file) return;
+
+    const formData = new FormData();
+
+    formData.append("image", file);
+
+    try {
+
+        const response = await fetch("http://localhost:5000/upload", {
+    method: "POST",
+    body: formData
+});
+
+console.log("Status:", response.status);
+console.log("OK:", response.ok);
+
+const data = await response.json();
+
+console.log(data);
+
+alert("Upload Successful!");
+    }
+    catch (error) {
+
+    console.error("UPLOAD ERROR:");
+    console.error(error);
+
+    alert("Upload Failed!");
+
+}
+
+});
