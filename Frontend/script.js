@@ -1,121 +1,122 @@
-const memoryGrid = document.getElementById("memoryGrid");
+// const memoryGrid = document.getElementById("memoryGrid");
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
+const dropZone = document.getElementById("dropZone");
 uploadBtn.addEventListener("click", function () {
 
     fileInput.click();
 
 });
 
-let memories = [
+// let memories = [
 
-    {
-        title: "NYC CodeQuest Problem Statement",
+//     {
+//         title: "NYC CodeQuest Problem Statement",
 
-        image: "images/codequest.png",
+//         image: "images/codequest.png",
 
-        tag: "Hackathon",
+//         tag: "Hackathon",
 
-        collection: "Hackathons",
+//         collection: "Hackathons",
 
-        summary: "Contains hackathon rules and judging criteria.",
+//         summary: "Contains hackathon rules and judging criteria.",
 
-        time: "Today • 4:32 PM",
+//         time: "Today • 4:32 PM",
 
-        pinned: true
-    },
+//         pinned: true
+//     },
 
-    {
-        title: "Recall UI Inspiration",
+//     {
+//         title: "Recall UI Inspiration",
 
-        image: "images/design.png",
+//         image: "images/design.png",
 
-        tag: "Design",
+//         tag: "Design",
 
-        collection: "Recall",
+//         collection: "Recall",
 
-        summary: "Dashboard inspiration for Recall.",
+//         summary: "Dashboard inspiration for Recall.",
 
-        time: "Today • 2:10 PM",
+//         time: "Today • 2:10 PM",
 
-        pinned: false
-    },
+//         pinned: false
+//     },
 
-    {
-        title: "Sony WH-1000XM5",
+//     {
+//         title: "Sony WH-1000XM5",
 
-        image: "images/headphone.png",
+//         image: "images/headphone.png",
 
-        tag: "Shopping",
+//         tag: "Shopping",
 
-        collection: "Shopping",
+//         collection: "Shopping",
 
-        summary: "Headphone comparison screenshot.",
+//         summary: "Headphone comparison screenshot.",
 
-        time: "Yesterday • 9:18 PM",
+//         time: "Yesterday • 9:18 PM",
 
-        pinned: false
-    }
+//         pinned: false
+//     }
 
-];
+// ];
 
-function renderMemories() {
+// function renderMemories() {
 
-    memoryGrid.innerHTML = "";
+//     memoryGrid.innerHTML = "";
 
-    memories.forEach(memory => {
+//     memories.forEach(memory => {
 
-        const card = document.createElement("div");
+//         const card = document.createElement("div");
 
-        card.className = "memory-card";
+//         card.className = "memory-card";
 
-        card.innerHTML = `
+//         card.innerHTML = `
 
-<img src="${memory.image}">
+// <img src="${memory.image}">
 
-<div class="memory-content">
+// <div class="memory-content">
 
-<span class="tag">
+// <span class="tag">
 
-${memory.tag}
+// ${memory.tag}
 
-</span>
+// </span>
 
-<h3>${memory.title}</h3>
+// <h3>${memory.title}</h3>
 
-<p>
+// <p>
 
-${memory.summary}
+// ${memory.summary}
 
-</p>
+// </p>
 
-<div class="memory-footer">
+// <div class="memory-footer">
 
-<span>
+// <span>
 
-📂 ${memory.collection}
+// 📂 ${memory.collection}
 
-</span>
+// </span>
 
-<span>
+// <span>
 
-📅 ${memory.time}
+// 📅 ${memory.time}
 
-</span>
+// </span>
 
-</div>
+// </div>
 
-</div>
+// </div>
 
-`;
+// `;
 
-        memoryGrid.appendChild(card);
+//         memoryGrid.appendChild(card);
 
-    });
+//     });
 
-}
+// }
 
-renderMemories();
+// renderMemories();
 fileInput.addEventListener("change", async function () {
 
     const file = fileInput.files[0];
@@ -150,5 +151,16 @@ alert("Upload Successful!");
     alert("Upload Failed!");
 
 }
+
+});
+
+dropZone.addEventListener("dragover", function (event) {
+
+    event.preventDefault();
+
+});
+dropZone.addEventListener("drop", function (event) {
+
+    event.preventDefault();
 
 });
