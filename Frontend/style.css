@@ -200,7 +200,30 @@ MENU
     color:white;
 
 }
+.menu .fa-house::after{
+    content: "Dashboard";
+}
+.menu .fa-clock-rotate-left::after{
+    content: "Timeline";
+}
+.menu .fa-image::after{
+    content: "Memories";
+}
+.menu .fa-folder::after{
+    content: "Collections";
+}
+.menu .fa-tag::after{
+    content: "Tags";
+}
+.menu .fa-trash::after{
+    content: "Trash";
+}
 
+.menu .fa-clock-rotate-left::after, .fa-folder::after, .fa-house::after, .fa-image::after, .fa-tag::after, .fa-trash::after{
+    font-family: "Inter",sans-serif;
+    font-weight: 500;
+    margin-left:15px;
+}
 /* ===========================
 SOURCES
 =========================== */
@@ -606,6 +629,7 @@ SECTIONS
     align-items:center;
 
     margin-bottom:24px;
+    margin-left: 23%;
 
 }
 
@@ -792,6 +816,7 @@ TIMELINE
     position:relative;
 
     margin-bottom:30px;
+    margin-top: 35px;
 
 }
 
@@ -808,9 +833,9 @@ TIMELINE
 
     background:#8B5CF6;
 
-    left:-29px;
+    left:-20px;
 
-    top:6px;
+    top:2px;
 
 }
 
@@ -860,8 +885,9 @@ TIMELINE
 .ai-grid{
 
     display:grid;
-    grid-template-columns:repeat(2,1fr);
+    grid-template-columns:repeat(4,1fr);
     gap:22px;
+    margin-left: 23%;
 
 }
 
@@ -1001,6 +1027,10 @@ UPLOAD SECTION
     text-align:center;
 
     transition:.3s;
+
+    width:70vw;
+
+    margin-left: 25%;
 
 }
 
@@ -1158,6 +1188,12 @@ TABLET
 
 }
 
+.upload-box{
+width:80vw;
+    margin-left:15%;
+
+}
+
 .sidebar h1,
 .sidebar h3,
 .sidebar p,
@@ -1198,8 +1234,36 @@ TABLET
     grid-template-columns:repeat(2,1fr);
 
 }
+.section-header{
+    margin-left: 10%;
+}
+
+.ai-grid{
+    margin-left: 10%;
+}
+
+.menu .fa-house::after{
+    content: "";
+}
+.menu .fa-clock-rotate-left::after{
+    content: "";
+}
+.menu .fa-image::after{
+    content: "";
+}
+.menu .fa-folder::after{
+    content: "";
+}
+.menu .fa-tag::after{
+    content: "";
+}
+.menu .fa-trash::after{
+    content: "";
+}
+
 
 }
+
 
 /* ===========================
 MOBILE
@@ -1272,6 +1336,8 @@ MOBILE
 .upload-box{
 
     padding:35px;
+    margin:auto;
+    width:90vw;
 
 }
 
@@ -1279,6 +1345,13 @@ MOBILE
 
     font-size:24px;
 
+}
+.section-header{
+    margin:auto;
+}
+
+.ai-grid{
+    margin:auto;
 }
 
 }
@@ -1296,7 +1369,13 @@ LARGE DESKTOP
     margin-left:280px;
 
 }
+.section-header{
+    margin-left: 23%;
+}
 
+.ai-grid{
+    margin-left: 23%;
+}
 }
 .memory-footer{
 
@@ -1315,3 +1394,4 @@ flex-wrap:wrap;
 gap:10px;
 
 }
+
