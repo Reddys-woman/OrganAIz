@@ -1,5 +1,6 @@
 const express = require("express");
 const multer = require("multer");
+const cors = require("cors");
 
 const storage = multer.diskStorage({
 
@@ -16,6 +17,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 const app = express();
+app.use(cors());
+
+app.use((req, res, next) => {
+    console.log("CORS middleware reached");
+    next();
+});
+
 const PORT = 5000;
 
 app.get("/", (req, res) => {
