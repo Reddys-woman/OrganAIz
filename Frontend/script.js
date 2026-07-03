@@ -1,5 +1,11 @@
 const memoryGrid = document.getElementById("memoryGrid");
 const fileInput = document.getElementById("fileInput");
+const uploadBtn = document.getElementById("uploadBtn");
+uploadBtn.addEventListener("click", function () {
+
+    fileInput.click();
+
+});
 
 let memories = [
 
