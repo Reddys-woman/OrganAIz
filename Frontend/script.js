@@ -1,3 +1,11 @@
+document.addEventListener("submit", function (e) {
+    console.log("FORM SUBMITTED!");
+    e.preventDefault();
+});
+
+document.addEventListener("click", function (e) {
+    console.log("Clicked:", e.target);
+});
 const memoryGrid = document.getElementById("memoryGrid");
 console.log(memoryGrid);
 const fileInput = document.getElementById("fileInput");
