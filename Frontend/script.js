@@ -1,4 +1,5 @@
-// const memoryGrid = document.getElementById("memoryGrid");
+const memoryGrid = document.getElementById("memoryGrid");
+console.log(memoryGrid);
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const dropZone = document.getElementById("dropZone");
@@ -8,115 +9,69 @@ uploadBtn.addEventListener("click", function () {
 
 });
 
-// let memories = [
+let memories = [];
 
-//     {
-//         title: "NYC CodeQuest Problem Statement",
+function renderMemories() {
 
-//         image: "images/codequest.png",
+    console.log("Rendering memories...");
 
-//         tag: "Hackathon",
+    memoryGrid.innerHTML = "";
 
-//         collection: "Hackathons",
+    memories.forEach(memory => {
+        console.log(memory);
+        const card = document.createElement("div");
 
-//         summary: "Contains hackathon rules and judging criteria.",
+        card.className = "memory-card";
 
-//         time: "Today • 4:32 PM",
+        card.innerHTML = `
 
-//         pinned: true
-//     },
+<img src="${memory.image}">
 
-//     {
-//         title: "Recall UI Inspiration",
+<div class="memory-content">
 
-//         image: "images/design.png",
+<span class="tag">
 
-//         tag: "Design",
+${memory.tag}
 
-//         collection: "Recall",
+</span>
 
-//         summary: "Dashboard inspiration for Recall.",
+<h3>${memory.title}</h3>
 
-//         time: "Today • 2:10 PM",
+<p>
 
-//         pinned: false
-//     },
+${memory.summary}
 
-//     {
-//         title: "Sony WH-1000XM5",
+</p>
 
-//         image: "images/headphone.png",
+<div class="memory-footer">
 
-//         tag: "Shopping",
+<span>
 
-//         collection: "Shopping",
+📂 ${memory.collection}
 
-//         summary: "Headphone comparison screenshot.",
+</span>
 
-//         time: "Yesterday • 9:18 PM",
+<span>
 
-//         pinned: false
-//     }
+📅 ${memory.time}
 
-// ];
+</span>
 
-// function renderMemories() {
+</div>
 
-//     memoryGrid.innerHTML = "";
+</div>
 
-//     memories.forEach(memory => {
+`;
 
-//         const card = document.createElement("div");
+        memoryGrid.appendChild(card);
+        console.log(memoryGrid.innerHTML);
 
-//         card.className = "memory-card";
+    });
 
-//         card.innerHTML = `
+}
 
-// <img src="${memory.image}">
-
-// <div class="memory-content">
-
-// <span class="tag">
-
-// ${memory.tag}
-
-// </span>
-
-// <h3>${memory.title}</h3>
-
-// <p>
-
-// ${memory.summary}
-
-// </p>
-
-// <div class="memory-footer">
-
-// <span>
-
-// 📂 ${memory.collection}
-
-// </span>
-
-// <span>
-
-// 📅 ${memory.time}
-
-// </span>
-
-// </div>
-
-// </div>
-
-// `;
-
-//         memoryGrid.appendChild(card);
-
-//     });
-
-// }
-
-// renderMemories();
+renderMemories();
+console.log("Memory card created successfully.");
 async function uploadFile(file) {
 
     const formData = new FormData();
@@ -140,16 +95,45 @@ async function uploadFile(file) {
 
         console.log(data);
 
+        const newMemory = {
+
+            title: "Processing...",
+
+            image: `http://localhost:5000/uploads/${data.filename}`,
+
+            tag: "Pending",
+
+            collection: "Inbox",
+
+            summary: "Waiting for AI analysis...",
+
+            time: "Just now",
+
+            pinned: false
+
+        };
+
+        memories.unshift(newMemory);
+        console.log(memories);
+console.log("Length:", memories.length);
+        console.log("Memories array:", memories);
+        console.log("Number of memories:", memories.length);
+
+        renderMemories();
+
         alert("Upload Successful!");
 
     }
 
     catch (error) {
 
-        console.error("UPLOAD ERROR:");
+        console.error("========== FULL ERROR ==========");
         console.error(error);
+        console.error(error.name);
+        console.error(error.message);
+        console.error(error.stack);
 
-        alert("Upload Failed!");
+        alert("Upload Failed");
 
     }
 
@@ -157,11 +141,15 @@ async function uploadFile(file) {
 
 fileInput.addEventListener("change", function () {
 
-    const file = fileInput.files[0];
+    const files = fileInput.files;
 
-    if (!file) return;
+    if (files.length === 0) return;
 
-    uploadFile(file);
+    for (const file of files) {
+
+        uploadFile(file);
+
+    }
 
 });
 
