@@ -1,6 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
+const { analyzeImage } = require("./gemini");
 
 const storage = multer.diskStorage({
 
@@ -34,15 +35,26 @@ app.get("/", (req, res) => {
 
 });
 
-app.post("/upload", upload.single("image"), (req, res) => {
-
+app.post("/upload", upload.single("image"), async (req, res) => {
     console.log("========== NEW IMAGE ==========");
     console.log(req.file);
 
-    res.json({
-    success: true,
-    filename: req.file.filename});
+    try {
+        const filePath = "uploads/" + req.file.filename;
+        const analysis = await analyzeImage(filePath);
 
+        res.json({
+            success: true,
+            filename: req.file.filename,
+            ...analysis
+        });
+    } catch (error) {
+        console.error("Gemini analysis failed:", error.message);
+        res.status(500).json({
+            success: false,
+            error: "Failed to analyze image"
+        });
+    }
 });
 
 app.listen (PORT, () =>{

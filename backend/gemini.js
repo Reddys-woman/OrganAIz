@@ -55,4 +55,4 @@ async function analyzeImage(filePath) {
   return parsed;
 }
 
-module.exports = { analyzeImage };
+module.exports = { analyzeImage };  
