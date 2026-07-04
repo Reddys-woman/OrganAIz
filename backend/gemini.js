@@ -49,7 +49,10 @@ async function analyzeImage(filePath) {
     PROMPT
   ]);
 
-  const rawText = result.response.text();
+  let rawText = result.response.text();
+  // Remove markdown code fences if Gemini added them despite instructions
+  rawText = rawText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
   const parsed = JSON.parse(rawText);
 
   return parsed;
