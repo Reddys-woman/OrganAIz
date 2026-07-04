@@ -156,13 +156,11 @@ async function uploadFile(file) {
 }
 
 fileInput.addEventListener("change", function () {
-
+    console.log("Change event fired!");
     const file = fileInput.files[0];
-
+    console.log("File selected:", file);
     if (!file) return;
-
     uploadFile(file);
-
 });
 
 dropZone.addEventListener("dragover", function (event) {
