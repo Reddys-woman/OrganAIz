@@ -117,11 +117,7 @@ uploadBtn.addEventListener("click", function () {
 // }
 
 // renderMemories();
-fileInput.addEventListener("change", async function () {
-
-    const file = fileInput.files[0];
-
-    if (!file) return;
+async function uploadFile(file) {
 
     const formData = new FormData();
 
@@ -130,27 +126,42 @@ fileInput.addEventListener("change", async function () {
     try {
 
         const response = await fetch("http://localhost:5000/upload", {
-    method: "POST",
-    body: formData
-});
 
-console.log("Status:", response.status);
-console.log("OK:", response.ok);
+            method: "POST",
 
-const data = await response.json();
+            body: formData
 
-console.log(data);
+        });
 
-alert("Upload Successful!");
+        console.log("Status:", response.status);
+        console.log("OK:", response.ok);
+
+        const data = await response.json();
+
+        console.log(data);
+
+        alert("Upload Successful!");
+
     }
+
     catch (error) {
 
-    console.error("UPLOAD ERROR:");
-    console.error(error);
+        console.error("UPLOAD ERROR:");
+        console.error(error);
 
-    alert("Upload Failed!");
+        alert("Upload Failed!");
+
+    }
 
 }
+
+fileInput.addEventListener("change", function () {
+
+    const file = fileInput.files[0];
+
+    if (!file) return;
+
+    uploadFile(file);
 
 });
 
@@ -162,5 +173,11 @@ dropZone.addEventListener("dragover", function (event) {
 dropZone.addEventListener("drop", function (event) {
 
     event.preventDefault();
+
+    const file = event.dataTransfer.files[0];
+
+    if (!file) return;
+
+    uploadFile(file);
 
 });
