@@ -149,25 +149,11 @@ console.log("Length:", memories.length);
 }
 
 fileInput.addEventListener("change", function () {
-<<<<<<< HEAD
-    console.log("Change event fired!");
-    const file = fileInput.files[0];
-    console.log("File selected:", file);
-    if (!file) return;
-    uploadFile(file);
-=======
-
     const files = fileInput.files;
-
     if (files.length === 0) return;
-
     for (const file of files) {
-
         uploadFile(file);
-
     }
-
->>>>>>> 3399630bd62c85a03a83232318e077082caa2e48
 });
 
 dropZone.addEventListener("dragover", function (event) {
