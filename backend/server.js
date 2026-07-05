@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
 const { analyzeImage } = require("./gemini");
-const { saveMemory } = require("./supabase");
+const { saveMemory, getAllMemories } = require("./supabase");
 
 const storage = multer.diskStorage({
 
@@ -62,6 +62,16 @@ app.post("/upload", upload.single("image"), async (req, res) => {
             success: false,
             error: "Failed to process image"
         });
+    }
+});
+
+app.get("/memories", async (req, res) => {
+    try {
+        const memories = await getAllMemories();
+        res.json({ success: true, memories });
+    } catch (error) {
+        console.error("Failed to fetch memories:", error.message);
+        res.status(500).json({ success: false, error: "Failed to fetch memories" });
     }
 });
 

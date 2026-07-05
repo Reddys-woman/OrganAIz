@@ -19,4 +19,17 @@ async function saveMemory(memoryData) {
   return data[0];
 }
 
-module.exports = { supabase, saveMemory };
+async function getAllMemories() {
+  const { data, error } = await supabase
+    .from("memories")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+module.exports = { supabase, saveMemory, getAllMemories };
