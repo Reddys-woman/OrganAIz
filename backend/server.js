@@ -2,6 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
 const { analyzeImage } = require("./gemini");
+const { saveMemory } = require("./supabase");
 
 const storage = multer.diskStorage({
 
@@ -43,16 +44,23 @@ app.post("/upload", upload.single("image"), async (req, res) => {
         const filePath = "uploads/" + req.file.filename;
         const analysis = await analyzeImage(filePath);
 
+        const savedMemory = await saveMemory({
+            filename: req.file.filename,
+            title: analysis.title,
+            summary: analysis.summary,
+            tags: analysis.tags,
+            collection: analysis.collection
+        });
+
         res.json({
             success: true,
-            filename: req.file.filename,
-            ...analysis
+            memory: savedMemory
         });
     } catch (error) {
-        console.error("Gemini analysis failed:", error.message);
+        console.error("Upload processing failed:", error.message);
         res.status(500).json({
             success: false,
-            error: "Failed to analyze image"
+            error: "Failed to process image"
         });
     }
 });
