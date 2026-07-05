@@ -1,3 +1,4 @@
+console.log("SCRIPT STARTED", new Date().toLocaleTimeString());
 document.addEventListener("submit", function (e) {
     console.log("FORM SUBMITTED!");
     e.preventDefault();
