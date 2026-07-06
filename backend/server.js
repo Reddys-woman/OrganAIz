@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
 const { analyzeImage } = require("./gemini");
-const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory } = require("./supabase");
+const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory, searchMemories} = require("./supabase");
 
 const storage = multer.diskStorage({
 
@@ -137,7 +137,28 @@ app.delete("/memories/:id", async (req, res) => {
         res.status(500).json({ success: false, error: "Failed to permanently delete memory" });
     }
 });
-    
+
+app.get("/search", async (req, res) => {
+    try {
+        const query = req.query.q;
+
+        const memories = await searchMemories(query);
+
+        res.json({
+            success: true,
+            memories
+        });
+
+    } catch (error) {
+        console.error("Search failed:", error.message);
+
+        res.status(500).json({
+            success: false,
+            error: "Search failed"
+        });
+    }
+});
+
 app.listen (PORT, () =>{
     console.log (`server is running on http://localhost:${PORT}`)
 })

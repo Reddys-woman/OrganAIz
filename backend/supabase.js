@@ -33,6 +33,24 @@ async function getAllMemories() {
   return data;
 }
 
+async function searchMemories(query) {
+  const { data, error } = await supabase
+    .from("memories")
+    .select("*")
+    .is("deleted_at", null)
+    .or( 
+    title.ilike.%${query}%,summary.ilike.%${query}%,collection.ilike.%${query}%,tags.cs.{${query}}
+    )
+
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 async function updateMemory(id, updates) {
   const { data, error } = await supabase
     .from("memories")
@@ -110,5 +128,6 @@ module.exports = {
   trashMemory,
   restoreMemory,
   getTrashedMemories,
-  permanentlyDeleteMemory
+  permanentlyDeleteMemory,
+  searchMemories
 };
