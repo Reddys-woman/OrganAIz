@@ -31,13 +31,43 @@ function renderMemories() {
 <h3>${memory.title}</h3>
 <p>${memory.summary}</p>
 <div class="memory-footer">
-<span>📂 ${memory.collection}</span>
-<span>📅 ${formatTime(memory.created_at)}</span>
+    <span>📂 ${memory.collection}</span>
+    <span>📅 ${formatTime(memory.created_at)}</span>
 </div>
+
+<button class="trash-btn" data-id="${memory.id}">
+    🗑️ Move to Trash
+</button>
 </div>
 `;
         memoryGrid.appendChild(card);
+        const trashButton = card.querySelector(".trash-btn");
+
+        trashButton.addEventListener("click", () => {
+            moveToTrash(memory.id);
+        });
     });
+}
+
+async function moveToTrash(id) {
+    try {
+        const response = await fetch(
+            `http://localhost:5000/memories/${id}/trash`,
+            {
+                method: "PATCH"
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to move to trash");
+        }
+
+        await loadMemories();
+
+    } catch (error) {
+        console.error(error);
+        alert("Failed to move memory to trash.");
+    }
 }
 
 async function loadMemories() {
