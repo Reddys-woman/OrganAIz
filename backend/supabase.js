@@ -38,10 +38,9 @@ async function searchMemories(query) {
     .from("memories")
     .select("*")
     .is("deleted_at", null)
-    .or( 
-    title.ilike.%${query}%,summary.ilike.%${query}%,collection.ilike.%${query}%,tags.cs.{${query}}
+    .or(
+      `title.ilike.%${query}%,summary.ilike.%${query}%,collection.ilike.%${query}%`
     )
-
     .order("created_at", { ascending: false });
 
   if (error) {

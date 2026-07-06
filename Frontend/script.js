@@ -5,6 +5,7 @@ const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const emptyMessage = document.getElementById("emptyMessage");
 const dropZone = document.getElementById("dropZone");
+const searchInput = document.getElementById("searchInput");
 
 uploadBtn.addEventListener("click", function () {
     fileInput.click();
@@ -81,6 +82,23 @@ async function loadMemories() {
     }
 }
 
+async function searchMemories(query) {
+    try {
+        const response = await fetch(
+            `http://localhost:5000/search?q=${encodeURIComponent(query)}`
+        );
+
+        const data = await response.json();
+
+        memories = data.memories;
+
+        renderMemories();
+
+    } catch (error) {
+        console.error("Search failed:", error);
+    }
+}
+    
 function startPolling() {
     if (pollingInterval) return;
     pollingInterval = setInterval(async () => {
@@ -128,6 +146,22 @@ dropZone.addEventListener("drop", function (event) {
     const file = event.dataTransfer.files[0];
     if (!file) return;
     uploadFile(file);
+});
+
+searchInput.addEventListener("keydown", function (event) {
+
+    if (event.key === "Enter") {
+
+        const query = searchInput.value.trim();
+
+        if (query === "") {
+            loadMemories();
+        } else {
+            searchMemories(query);
+        }
+
+    }
+
 });
 
 loadMemories();
