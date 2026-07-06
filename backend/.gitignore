@@ -2,3 +2,4 @@
 node_modules
 
 #this folder used to ignore files not want to be sent to cloud for ex our API KEY 
+uploads/*
