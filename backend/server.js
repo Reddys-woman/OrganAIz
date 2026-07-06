@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
 const { analyzeImage } = require("./gemini");
-const { saveMemory, getAllMemories, updateMemory } = require("./supabase");
+const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory } = require("./supabase");
 
 const storage = multer.diskStorage({
 
@@ -89,6 +89,55 @@ app.get("/memories", async (req, res) => {
     }
 });
 
+app.patch("/memories/:id/trash", async (req, res) => {
+    try {
+        const updatedMemory = await trashMemory(req.params.id);
+
+        res.json({
+            success: true,
+            memory: updatedMemory
+        });
+
+    } catch (error) {
+        console.error("Failed to move memory to trash:", error.message);
+
+        res.status(500).json({
+            success: false,
+            error: "Failed to move memory to trash"
+        });
+    }
+});
+
+app.get("/trash", async (req, res) => {
+    try {
+        const trashedMemories = await getTrashedMemories();
+        res.json({ success: true, memories: trashedMemories });
+    } catch (error) {
+        console.error("Failed to fetch trash:", error.message);
+        res.status(500).json({ success: false, error: "Failed to fetch trash" });
+    }
+});
+
+app.patch("/memories/:id/restore", async (req, res) => {
+    try {
+        const restoredMemory = await restoreMemory(req.params.id);
+        res.json({ success: true, memory: restoredMemory });
+    } catch (error) {
+        console.error("Failed to restore memory:", error.message);
+        res.status(500).json({ success: false, error: "Failed to restore memory" });
+    }
+});
+
+app.delete("/memories/:id", async (req, res) => {
+    try {
+        await permanentlyDeleteMemory(req.params.id);
+        res.json({ success: true, message: "Memory permanently deleted" });
+    } catch (error) {
+        console.error("Failed to permanently delete memory:", error.message);
+        res.status(500).json({ success: false, error: "Failed to permanently delete memory" });
+    }
+});
+    
 app.listen (PORT, () =>{
     console.log (`server is running on http://localhost:${PORT}`)
 })
