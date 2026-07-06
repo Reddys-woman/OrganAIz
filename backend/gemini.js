@@ -33,29 +33,32 @@ function getMimeType(filePath) {
   return "image/jpeg";
 }
 
-async function analyzeImage(filePath) {
+async function analyzeImage(filePath, retries = 2) {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const imageBase64 = imageToBase64(filePath);
   const mimeType = getMimeType(filePath);
 
-  const result = await model.generateContent([
-    {
-      inlineData: {
-        data: imageBase64,
-        mimeType: mimeType
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const result = await model.generateContent([
+        { inlineData: { data: imageBase64, mimeType: mimeType } },
+        PROMPT
+      ]);
+
+      let rawText = result.response.text();
+      rawText = rawText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+      return JSON.parse(rawText);
+
+    } catch (error) {
+      console.log(`Gemini attempt ${attempt + 1} failed:`, error.message);
+      if (attempt === retries) {
+        throw error;
       }
-    },
-    PROMPT
-  ]);
-
-  let rawText = result.response.text();
-  // Remove markdown code fences if Gemini added them despite instructions
-  rawText = rawText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-
-  const parsed = JSON.parse(rawText);
-
-  return parsed;
+      await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+    }
+  }
 }
 
 module.exports = { analyzeImage };  

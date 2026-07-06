@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
 const { analyzeImage } = require("./gemini");
-const { saveMemory, getAllMemories } = require("./supabase");
+const { saveMemory, getAllMemories, updateMemory } = require("./supabase");
 
 const storage = multer.diskStorage({
 
@@ -42,21 +42,34 @@ app.post("/upload", upload.single("image"), async (req, res) => {
     console.log(req.file);
 
     try {
-        const filePath = "uploads/" + req.file.filename;
-        const analysis = await analyzeImage(filePath);
-
-        const savedMemory = await saveMemory({
+        const placeholderMemory = await saveMemory({
             filename: req.file.filename,
-            title: analysis.title,
-            summary: analysis.summary,
-            tags: analysis.tags,
-            collection: analysis.collection
+            title: "Processing...",
+            summary: "AI analysis in progress",
+            tags: [],
+            collection: "Inbox"
         });
 
         res.json({
             success: true,
-            memory: savedMemory
+            memory: placeholderMemory
         });
+
+        const filePath = "uploads/" + req.file.filename;
+        analyzeImage(filePath)
+            .then(async (analysis) => {
+                await updateMemory(placeholderMemory.id, {
+                    title: analysis.title,
+                    summary: analysis.summary,
+                    tags: analysis.tags,
+                    collection: analysis.collection
+                });
+                console.log(`Memory ${placeholderMemory.id} updated with AI analysis`);
+            })
+            .catch((error) => {
+                console.error(`Gemini analysis failed for memory ${placeholderMemory.id}:`, error.message);
+            });
+
     } catch (error) {
         console.error("Upload processing failed:", error.message);
         res.status(500).json({

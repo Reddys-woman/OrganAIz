@@ -33,3 +33,19 @@ async function getAllMemories() {
 }
 
 module.exports = { supabase, saveMemory, getAllMemories };
+
+async function updateMemory(id, updates) {
+  const { data, error } = await supabase
+    .from("memories")
+    .update(updates)
+    .eq("id", id)
+    .select();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data[0];
+}
+
+module.exports = { supabase, saveMemory, getAllMemories, updateMemory };
