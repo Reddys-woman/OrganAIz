@@ -10,6 +10,7 @@ uploadBtn.addEventListener("click", function () {
 });
 
 let memories = [];
+let pollingInterval = null;
 
 function formatTime(isoString) {
     const date = new Date(isoString);
@@ -49,6 +50,18 @@ async function loadMemories() {
     }
 }
 
+function startPolling() {
+    if (pollingInterval) return;
+    pollingInterval = setInterval(async () => {
+        await loadMemories();
+        const stillProcessing = memories.some(m => m.title === "Processing...");
+        if (!stillProcessing) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+    }, 3000);
+}
+
 async function uploadFile(file) {
     const formData = new FormData();
     formData.append("image", file);
@@ -59,12 +72,9 @@ async function uploadFile(file) {
         });
         const data = await response.json();
         console.log(data);
-
         memories.unshift(data.memory);
         renderMemories();
-
-        setTimeout(loadMemories, 5000);
-
+        startPolling();
     } catch (error) {
         console.error("Upload failed:", error);
         alert("Upload Failed");

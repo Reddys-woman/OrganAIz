@@ -48,4 +48,26 @@ async function updateMemory(id, updates) {
   return data[0];
 }
 
-module.exports = { supabase, saveMemory, getAllMemories, updateMemory };
+async function trashMemory(id) {
+  const { data, error } = await supabase
+    .from("memories")
+    .update({
+      deleted_at: new Date().toISOString()
+    })
+    .eq("id", id)
+    .select();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data[0];
+}
+
+module.exports = {
+  supabase,
+  saveMemory,
+  getAllMemories,
+  updateMemory,
+  trashMemory
+};
