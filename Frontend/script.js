@@ -11,6 +11,7 @@ const memoryGrid = document.getElementById("memoryGrid");
 console.log(memoryGrid);
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
+const emptyMessage = document.getElementById("emptyMessage");
 const dropZone = document.getElementById("dropZone");
 uploadBtn.addEventListener("click", function () {
 
@@ -25,6 +26,16 @@ function renderMemories() {
     console.log("Rendering memories...");
 
     memoryGrid.innerHTML = "";
+    if(memories.length === 0){
+
+    emptyMessage.style.display = "block";
+
+}
+else{
+
+    emptyMessage.style.display = "none";
+
+}
 
     memories.forEach(memory => {
         console.log(memory);

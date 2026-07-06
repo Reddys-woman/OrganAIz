@@ -60,6 +60,7 @@ img{
     width:280px;
     background:#171923;
 
+
     color:white;
 
     display:flex;
@@ -67,7 +68,7 @@ img{
     justify-content:space-between;
 
     padding:28px;
-
+    overflow-y: auto;
     position:fixed;
     left:0;
     top:0;
@@ -219,6 +220,22 @@ MENU
     content: "Trash";
 }
 
+.types .images::after {
+    content: "Images";
+}
+.types .voice-notes::after {
+    content: "Audio Files";
+    font-family: "Inter",sans-serif;
+    font-weight: 500;
+    margin-left:15px;
+}
+.types .pdf::after {
+    content: "PDF's";
+    font-family: "Inter",sans-serif;
+    font-weight: 500;
+    margin-left:15px;
+}
+
 .menu .fa-clock-rotate-left::after, .fa-folder::after, .fa-house::after, .fa-image::after, .fa-tag::after, .fa-trash::after{
     font-family: "Inter",sans-serif;
     font-weight: 500;
@@ -258,6 +275,7 @@ SOURCES
     padding:12px 0;
 
 }
+
 
 .count{
 
@@ -545,25 +563,25 @@ HERO
 
 .purple{
 
-    background:#8B5CF6;
+    background:#e0a2ff;
 
 }
 
-.blue{
+.purple2{
 
-    background:#3B82F6;
-
-}
-
-.green{
-
-    background:#22C55E;
+    background:#ce6eff;
 
 }
 
-.orange{
+.purple3{
 
-    background:#F59E0B;
+    background:#ac1ff3;
+
+}
+
+.purple4{
+
+    background:#6e00a5;
 
 }
 
@@ -607,19 +625,50 @@ DASHBOARD GRID
 SECTIONS
 =========================== */
 
-.section{
+.section1{
 
     background:white;
 
     border-radius:24px;
+    width:73vw;
+    min-height: 150px;
+
+    padding:26px;
+
+    margin-bottom:10px;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.05);
+}
+
+.empty-message{
+
+    text-align:center;
+    margin-top:10px;
+    color:#464646;
+    font-size:15px;
+    font-weight:400;
+    filter: opacity(0.8);
+
+}
+
+.section2{
+
+    background:white;
+     min-height: 150px;
+
+    border-radius:24px;
+    width:73vw;
 
     padding:26px;
 
     margin-bottom:28px;
 
     box-shadow:0 10px 30px rgba(0,0,0,.05);
+    margin-left: 20rem;
 
 }
+
+
 
 .section-header{
 
@@ -630,8 +679,7 @@ SECTIONS
     align-items:center;
 
     margin-bottom:24px;
-    margin-left: 23%;
-
+  
 }
 
 .section-header h2{
@@ -881,6 +929,8 @@ TIMELINE
 
 .ai-section{
     margin-top:30px;
+    border-radius:24px;
+    
 }
 
 .ai-grid{
@@ -993,13 +1043,13 @@ TIMELINE
 
 }
 
-.purple{
+.voilet{
 
     background:#EEE5FF;
 
 }
 
-.blue{
+.cyan{
 
     background:#E7F2FF;
 
@@ -1183,7 +1233,7 @@ TABLET
 
 .sidebar{
 
-    width:95px;
+    width:110px;
 
     padding:22px;
 
@@ -1214,7 +1264,7 @@ width:80vw;
 
 .stats{
 
-    grid-template-columns:repeat(2,1fr);
+    grid-template-columns:repeat(4,1fr);
 
 }
 
@@ -1235,12 +1285,17 @@ width:80vw;
     grid-template-columns:repeat(2,1fr);
 
 }
-.section-header{
-    margin-left: 10%;
-}
 
 .ai-grid{
     margin-left: 10%;
+}
+
+.section2 {
+    margin-left: 8rem;
+    width:85vw;
+}
+.section1 {
+    width:85vw;
 }
 
 .menu .fa-house::after{
@@ -1261,7 +1316,24 @@ width:80vw;
 .menu .fa-trash::after{
     content: "";
 }
+.storage-card {
+    Display:none;
+}
+.types .images::after {
+    content: "";
+}
+.types .voice-notes::after {
+    content: "";
+    
+}
+.types .pdf::after {
+    content: "";
+}
 
+.source{
+    justify-content:center;
+
+}
 
 }
 
@@ -1271,6 +1343,12 @@ MOBILE
 =========================== */
 
 @media(max-width:768px){
+
+
+.section-header h2{
+
+    font-size:15px;
+}
 
 .content{
 
@@ -1318,7 +1396,7 @@ MOBILE
 
 .stats{
 
-    grid-template-columns:1fr;
+    grid-template-columns:repeat(2,1fr);
 
 }
 
@@ -1347,13 +1425,18 @@ MOBILE
     font-size:24px;
 
 }
-.section-header{
-    margin:auto;
-}
-
 .ai-grid{
     margin:auto;
 }
+
+.section2 {
+    margin-left: 1.5rem;
+    width: 90vw;
+}
+.section1 {
+    width: 90vw;
+}
+
 
 }
 
@@ -1370,13 +1453,7 @@ LARGE DESKTOP
     margin-left:280px;
 
 }
-.section-header{
-    margin-left: 23%;
-}
 
-.ai-grid{
-    margin-left: 23%;
-}
 }
 .memory-footer{
 
