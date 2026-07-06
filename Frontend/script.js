@@ -3,6 +3,7 @@ console.log("SCRIPT STARTED", new Date().toLocaleTimeString());
 const memoryGrid = document.getElementById("memoryGrid");
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
+const emptyMessage = document.getElementById("emptyMessage");
 const dropZone = document.getElementById("dropZone");
 
 uploadBtn.addEventListener("click", function () {
