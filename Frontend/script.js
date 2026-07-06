@@ -1,151 +1,74 @@
 console.log("SCRIPT STARTED", new Date().toLocaleTimeString());
-document.addEventListener("submit", function (e) {
-    console.log("FORM SUBMITTED!");
-    e.preventDefault();
-});
 
-document.addEventListener("click", function (e) {
-    console.log("Clicked:", e.target);
-});
 const memoryGrid = document.getElementById("memoryGrid");
-console.log(memoryGrid);
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const dropZone = document.getElementById("dropZone");
+
 uploadBtn.addEventListener("click", function () {
-
     fileInput.click();
-
 });
 
 let memories = [];
 
-function renderMemories() {
-
-    console.log("Rendering memories...");
-
-    memoryGrid.innerHTML = "";
-
-    memories.forEach(memory => {
-        console.log(memory);
-        const card = document.createElement("div");
-
-        card.className = "memory-card";
-
-        card.innerHTML = `
-
-<img src="${memory.image}">
-
-<div class="memory-content">
-
-<span class="tag">
-
-${memory.tag}
-
-</span>
-
-<h3>${memory.title}</h3>
-
-<p>
-
-${memory.summary}
-
-</p>
-
-<div class="memory-footer">
-
-<span>
-
-📂 ${memory.collection}
-
-</span>
-
-<span>
-
-📅 ${memory.time}
-
-</span>
-
-</div>
-
-</div>
-
-`;
-
-        memoryGrid.appendChild(card);
-        console.log(memoryGrid.innerHTML);
-
-    });
-
+function formatTime(isoString) {
+    const date = new Date(isoString);
+    return date.toLocaleDateString() + " • " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-renderMemories();
-console.log("Memory card created successfully.");
-async function uploadFile(file) {
+function renderMemories() {
+    memoryGrid.innerHTML = "";
+    memories.forEach(memory => {
+        const card = document.createElement("div");
+        card.className = "memory-card";
+        const tagText = memory.tags && memory.tags.length > 0 ? memory.tags[0] : memory.collection;
+        card.innerHTML = `
+<img src="http://localhost:5000/uploads/${memory.filename}">
+<div class="memory-content">
+<span class="tag">${tagText}</span>
+<h3>${memory.title}</h3>
+<p>${memory.summary}</p>
+<div class="memory-footer">
+<span>📂 ${memory.collection}</span>
+<span>📅 ${formatTime(memory.created_at)}</span>
+</div>
+</div>
+`;
+        memoryGrid.appendChild(card);
+    });
+}
 
-    const formData = new FormData();
-
-    formData.append("image", file);
-
+async function loadMemories() {
     try {
-
-        const response = await fetch("http://localhost:5000/upload", {
-
-            method: "POST",
-
-            body: formData
-
-        });
-
-        console.log("Status:", response.status);
-        console.log("OK:", response.ok);
-
+        const response = await fetch("http://localhost:5000/memories");
         const data = await response.json();
+        memories = data.memories;
+        renderMemories();
+    } catch (error) {
+        console.error("Failed to load memories:", error);
+    }
+}
 
+async function uploadFile(file) {
+    const formData = new FormData();
+    formData.append("image", file);
+    try {
+        const response = await fetch("http://localhost:5000/upload", {
+            method: "POST",
+            body: formData
+        });
+        const data = await response.json();
         console.log(data);
 
-        const newMemory = {
-
-            title: "Processing...",
-
-            image: `http://localhost:5000/uploads/${data.filename}`,
-
-            tag: "Pending",
-
-            collection: "Inbox",
-
-            summary: "Waiting for AI analysis...",
-
-            time: "Just now",
-
-            pinned: false
-
-        };
-
-        memories.unshift(newMemory);
-        console.log(memories);
-console.log("Length:", memories.length);
-        console.log("Memories array:", memories);
-        console.log("Number of memories:", memories.length);
-
+        memories.unshift(data.memory);
         renderMemories();
 
-        alert("Upload Successful!");
+        setTimeout(loadMemories, 5000);
 
-    }
-
-    catch (error) {
-
-        console.error("========== FULL ERROR ==========");
-        console.error(error);
-        console.error(error.name);
-        console.error(error.message);
-        console.error(error.stack);
-
+    } catch (error) {
+        console.error("Upload failed:", error);
         alert("Upload Failed");
-
     }
-
 }
 
 fileInput.addEventListener("change", function () {
@@ -157,18 +80,13 @@ fileInput.addEventListener("change", function () {
 });
 
 dropZone.addEventListener("dragover", function (event) {
-
     event.preventDefault();
-
 });
 dropZone.addEventListener("drop", function (event) {
-
     event.preventDefault();
-
     const file = event.dataTransfer.files[0];
-
     if (!file) return;
-
     uploadFile(file);
-
 });
+
+loadMemories();
