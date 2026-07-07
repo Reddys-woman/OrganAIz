@@ -44,11 +44,16 @@ img{
    MAIN LAYOUT
 =========================== */
 
+html {
+    background-color: #e3dbff;
+}
+body {
+    background-color: #e3dbff;
+}
 .container{
 
     display:flex;
-    min-height:100vh;
-
+    min-height:80vh;
 }
 
 /* ===========================
@@ -80,6 +85,7 @@ img{
 
     display:flex;
     align-items:center;
+    justify-content: center;
     gap:14px;
 
     margin-bottom:35px;
@@ -245,14 +251,14 @@ MENU
 SOURCES
 =========================== */
 
-.sources{
+.your-files{
 
     margin-top:40px;
 
 }
 
 
-.sources h4{
+.your-files h4{
 
     font-size:13px;
 
@@ -263,8 +269,7 @@ SOURCES
     margin-bottom:20px;
 
 }
-
-.source{
+.your-file{
 
     display:flex;
 
@@ -321,7 +326,7 @@ BOTTOM CARDS
 
 .progress-fill{
 
-    width:42%;
+    width:0%;
 
     height:100%;
 
@@ -513,7 +518,7 @@ HERO
 .stats{
 
     display:grid;
-    grid-template-columns:repeat(5,1fr);
+    grid-template-columns:repeat(4,1fr);
     gap:22px;
 
     margin-bottom:35px;
@@ -575,13 +580,13 @@ HERO
 
 .purple3{
 
-    background:#ac1ff3;
+    background:#ba31ff;
 
 }
 
 .purple4{
 
-    background:#6e00a5;
+    background:#7a00b7;
 
 }
 
@@ -634,8 +639,6 @@ SECTIONS
     min-height: 150px;
 
     padding:26px;
-
-    margin-bottom:10px;
 
     box-shadow:0 10px 30px rgba(0,0,0,.05);
 }
@@ -1079,9 +1082,9 @@ UPLOAD SECTION
 
     transition:.3s;
 
-    width:70vw;
+    width:73vw;
 
-    margin-left: 25%;
+    margin-left: 20rem;
 
 }
 
@@ -1330,7 +1333,7 @@ width:80vw;
     content: "";
 }
 
-.source{
+.your-file{
     justify-content:center;
 
 }
@@ -1400,6 +1403,10 @@ MOBILE
 
 }
 
+.stat-card h2 {
+    font-size: 20px;
+}
+
 .memory-grid{
 
     grid-template-columns:1fr;
@@ -1436,7 +1443,9 @@ MOBILE
 .section1 {
     width: 90vw;
 }
-
+.empty-message {
+    font-size: 9px;
+}
 
 }
 

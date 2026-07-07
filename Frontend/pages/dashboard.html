@@ -1,0 +1,145 @@
+  <!-- Hero -->
+
+            <section class="hero">
+
+                <div>
+
+                    <h1>
+
+                        Welcome, User! 👋
+
+                    </h1>
+                </div>
+
+            </section>
+
+            <!-- Statistics -->
+
+            <section class="stats">
+
+                <div class="stat-card">
+
+                    <i class="fa-solid fa-box purple"></i>
+
+                    <h2></h2>
+
+                    <p>Total Memories</p>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <i class="fa-solid fa-calendar purple2"></i>
+
+                    <h2></h2>
+
+                    <p>Today</p>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <i class="fa-solid fa-folder purple3"></i>
+
+                    <h2></h2>
+
+                    <p>Collections</p>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <i class="fa-solid fa-fire purple4"></i>
+
+                    <h2>_ Days</h2>
+
+                    <p>Recall Streak</p>
+
+                </div>
+
+            </section>
+
+            <!-- Dashboard Grid Starts Here -->
+
+            <div class="dashboard-grid">
+
+                <!-- ===========================
+     LEFT COLUMN
+=========================== -->
+
+                <div class="left-column">
+
+                    <!-- Recent Memories -->
+
+                    <section class="section1">
+
+                        <div class="section-header">
+
+                            <h2>Recent Memories</h2>
+
+                            <a href="#">View All</a>
+
+                        </div>
+
+                        <div class="memory-grid" id="memoryGrid">
+
+                        </div>
+                        <p id="emptyMessage" class="empty-message">
+                            Well... It feels light. Upload some files!
+                        </p>
+
+                       
+                </div>
+
+                </section>
+
+            </div>
+
+    </div>
+    <!-- End Dashboard Grid -->
+    <!-- ===========================
+     AI RECOMMENDATIONS
+=========================== -->
+
+    <section class="section2 card ai-section">
+
+        <div class="section-header">
+            <h2>AI Recommendations</h2>
+        </div>
+
+        <div class="ai-grid">
+
+        </div>
+
+    </section>
+
+
+    <!-- ===========================
+     QUICK UPLOAD
+=========================== -->
+
+    <section class="upload-section">
+
+        <div class="upload-box" id="dropZone">
+
+            <div class="upload-icon">
+                ☁
+            </div>
+
+            <h3>Quick Upload</h3>
+
+            <p>
+                Drag & Drop screenshots here
+                <br>
+                or
+            </p>
+
+            <input type="file" id="fileInput" multiple hidden>
+
+            <button type="button" onclick="document.getElementById('fileInput').click()">
+                Browse Files
+            </button>
+
+        </div>
+
+    </section>

@@ -1,3 +1,12 @@
+async function loadPage(page){
+
+    const response = await fetch(page);
+
+    const html = await response.text();
+
+    document.getElementById("mainContent").innerHTML = html;
+
+}
 console.log("SCRIPT STARTED", new Date().toLocaleTimeString());
 document.addEventListener("submit", function (e) {
     console.log("FORM SUBMITTED!");
@@ -189,3 +198,4 @@ dropZone.addEventListener("drop", function (event) {
     uploadFile(file);
 
 });
+loadPage("pages/dashboard.html");
