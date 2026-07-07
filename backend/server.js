@@ -1,6 +1,8 @@
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
+const { analyzeImage } = require("./gemini");
+const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory } = require("./supabase");
 
 const storage = multer.diskStorage({
 
@@ -35,17 +37,107 @@ app.get("/", (req, res) => {
 
 });
 
-app.post("/upload", upload.single("image"), (req, res) => {
-
+app.post("/upload", upload.single("image"), async (req, res) => {
     console.log("========== NEW IMAGE ==========");
     console.log(req.file);
 
-    res.json({
-    success: true,
-    filename: req.file.filename});
+    try {
+        const placeholderMemory = await saveMemory({
+            filename: req.file.filename,
+            title: "Processing...",
+            summary: "AI analysis in progress",
+            tags: [],
+            collection: "Inbox"
+        });
 
+        res.json({
+            success: true,
+            memory: placeholderMemory
+        });
+
+        const filePath = "uploads/" + req.file.filename;
+        analyzeImage(filePath)
+            .then(async (analysis) => {
+                await updateMemory(placeholderMemory.id, {
+                    title: analysis.title,
+                    summary: analysis.summary,
+                    tags: analysis.tags,
+                    collection: analysis.collection
+                });
+                console.log(`Memory ${placeholderMemory.id} updated with AI analysis`);
+            })
+            .catch((error) => {
+                console.error(`Gemini analysis failed for memory ${placeholderMemory.id}:`, error.message);
+            });
+
+    } catch (error) {
+        console.error("Upload processing failed:", error.message);
+        res.status(500).json({
+            success: false,
+            error: "Failed to process image"
+        });
+    }
 });
 
+app.get("/memories", async (req, res) => {
+    try {
+        const memories = await getAllMemories();
+        res.json({ success: true, memories });
+    } catch (error) {
+        console.error("Failed to fetch memories:", error.message);
+        res.status(500).json({ success: false, error: "Failed to fetch memories" });
+    }
+});
+
+app.patch("/memories/:id/trash", async (req, res) => {
+    try {
+        const updatedMemory = await trashMemory(req.params.id);
+
+        res.json({
+            success: true,
+            memory: updatedMemory
+        });
+
+    } catch (error) {
+        console.error("Failed to move memory to trash:", error.message);
+
+        res.status(500).json({
+            success: false,
+            error: "Failed to move memory to trash"
+        });
+    }
+});
+
+app.get("/trash", async (req, res) => {
+    try {
+        const trashedMemories = await getTrashedMemories();
+        res.json({ success: true, memories: trashedMemories });
+    } catch (error) {
+        console.error("Failed to fetch trash:", error.message);
+        res.status(500).json({ success: false, error: "Failed to fetch trash" });
+    }
+});
+
+app.patch("/memories/:id/restore", async (req, res) => {
+    try {
+        const restoredMemory = await restoreMemory(req.params.id);
+        res.json({ success: true, memory: restoredMemory });
+    } catch (error) {
+        console.error("Failed to restore memory:", error.message);
+        res.status(500).json({ success: false, error: "Failed to restore memory" });
+    }
+});
+
+app.delete("/memories/:id", async (req, res) => {
+    try {
+        await permanentlyDeleteMemory(req.params.id);
+        res.json({ success: true, message: "Memory permanently deleted" });
+    } catch (error) {
+        console.error("Failed to permanently delete memory:", error.message);
+        res.status(500).json({ success: false, error: "Failed to permanently delete memory" });
+    }
+});
+    
 app.listen (PORT, () =>{
     console.log (`server is running on http://localhost:${PORT}`)
 })
