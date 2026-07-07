@@ -7,7 +7,6 @@
 
     <title>Recall - Remembers what you Forgot</title>
 
-
     <link rel="stylesheet" href="style.css">
 
     <!-- Font Awesome -->
@@ -16,7 +15,6 @@
     <!-- Google Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
 
@@ -25,7 +23,7 @@
 <body>
     <div class="container">
         <!-- ===========================
-             SIDEBAR
+             SIDEBAR (stays fixed, never re-rendered)
         ============================ -->
         <aside class="sidebar">
             <div>
@@ -33,172 +31,265 @@
                     <i class="fa-solid fa-brain"></i>
                     <h1>Recall</h1>
                 </div>
+
                 <!-- Upload Button -->
                 <button class="upload-btn" id="uploadBtn" type="button">
-
                     <i class="fa-solid fa-plus"></i>
-
                     <div>
-
                         <h3>Add Memory</h3>
-
                         <p>Upload</p>
-
                     </div>
-
                 </button>
 
                 <!-- Navigation -->
-
                 <nav class="menu">
-
-                    <a href="#" class="active">
-
+                    <a href="#" class="active" data-page="dashboard">
                         <i class="fa-solid fa-house"></i>
-
-
-
                     </a>
-
-                
-                    <a href="#">
-
+                    <a href="#" data-page="memories">
                         <i class="fa-solid fa-image"></i>
-
-
-
                     </a>
-
-                    <a href="#">
-
+                    <a href="#" data-page="collections">
                         <i class="fa-solid fa-folder"></i>
-
-
-
                     </a>
-
-                
-                    <a href="#">
-
+                    <a href="#" data-page="trash">
                         <i class="fa-solid fa-trash"></i>
-
-
-
                     </a>
-
                 </nav>
 
-                <!-- Sources -->
-
-                <div class="your-files">
-
+                <!-- Sources (also act as page links) -->
+                <div class="sources">
                     <h4>YOUR FILES</h4>
 
-                    <div class="your-file">
-
+                    <div class="source" data-page="images">
                         <span class="types">
-
                             <i class="fa-regular fa-image images"></i>
-
-
                         </span>
-
-                        <span class="count"></span>
-
+                        <span class="count" id="countImages">0</span>
                     </div>
 
-                    <div class="your-file">
-
+                    <div class="source" data-page="audio">
                         <span class="types">
-
                             <i class="fa-solid fa-microphone voice-notes"></i>
-
-
                         </span>
-
-                        <span class="count"></span>
-
+                        <span class="count" id="countVoice">0</span>
                     </div>
 
-                    <div class="your-file">
-
+                    <div class="source" data-page="document">
                         <span class="types">
-
-                            <i class="fa-regular fa-file pdf"></i>
-
-
+                            <i class="fa-regular fa-file doc"></i>
                         </span>
-
-                        <span class="count"></span>
-
+                        <span class="count" id="countdoc">0</span>
                     </div>
-
                 </div>
-
             </div>
 
             <!-- Bottom Sidebar -->
-
             <div>
-
                 <div class="storage-card">
-
                     <h3>Storage Used</h3>
-
                     <div class="progress">
-
                         <div class="progress-fill"></div>
-
                     </div>
-
-                    <p>2.4 GB / 10 GB</p>
-
+                    <p> GB / 10 GB</p>
                 </div>
-
             </div>
-
         </aside>
 
         <!-- ===========================
-             MAIN CONTENT
+             MAIN CONTENT (topbar stays fixed, #pageContainer swaps)
         ============================ -->
-
         <main class="content">
 
-            <!-- Top Bar -->
-
+            <!-- Top Bar - stays the same across every page -->
             <header class="topbar">
-
                 <div class="search-box">
-
                     <i class="fa-solid fa-magnifying-glass"></i>
-
-                    <input type="text"
+                    <input type="text" id="searchInput"
                         placeholder='Search your memories... (e.g. "hackathon deadline", "shopping list")'>
-
                 </div>
 
                 <div class="top-icons">
-                    <button>
-
+                    <button id="themeToggle" type="button" title="Toggle dark mode">
                         <i class="fa-regular fa-moon"></i>
-
                     </button>
-
-                    <img src="/frontend/images/profile.jpg" alt="Profile">
-
+                    <img src="images/profile.jpg" alt="Profile">
                 </div>
-
             </header>
 
-          
+            <!-- ===========================
+                 PAGE: DASHBOARD
+            ============================ -->
+            <section class="page" data-page="dashboard">
 
-    </main>
+                <section class="hero">
+                    <div>
+                        <h1>Welcome, User! 👋</h1>
+                    </div>
+                </section>
 
+                <section class="stats">
+                    <div class="stat-card">
+                        <i class="fa-solid fa-box purple"></i>
+                        <h2 id="statTotal">0</h2>
+                        <p>Total Memories</p>
+                    </div>
+
+                    <div class="stat-card">
+                        <i class="fa-solid fa-calendar purple2"></i>
+                        <h2 id="statToday">0</h2>
+                        <p>Today</p>
+                    </div>
+
+                    <div class="stat-card">
+                        <i class="fa-solid fa-folder purple3"></i>
+                        <h2 id="statCollections">0</h2>
+                        <p>Collections</p>
+                    </div>
+
+                    <div class="stat-card">
+                        <i class="fa-solid fa-fire purple4"></i>
+                        <h2 id="statStreak">0 days</h2>
+                        <p>Recall Streak</p>
+                    </div>
+                </section>
+
+                <section class="section1 full-width">
+                    <div class="section-header">
+                        <h2>Recent Memories</h2>
+                        <a href="#" data-page-link="memories">View All</a>
+                    </div>
+
+                    <div class="memory-grid" id="memoryGrid"></div>
+                    <p id="emptyMessage" class="empty-message">
+                        Well... It feels light. Upload some files!
+                    </p>
+                </section>
+
+                <section class="section1 full-width ai-section">
+                    <div class="section-header">
+                        <h2>AI Recommendations</h2>
+                    </div>
+                    <div class="ai-grid" id="aiGrid"></div>
+                    <p class="empty-message visible">Coming soon.</p>
+                </section>
+
+                <section class="upload-section full-width">
+                    <div class="upload-box" id="dropZone">
+                        <div class="upload-icon">☁</div>
+                        <h3>Quick Upload</h3>
+                        <p>
+                            Drag & Drop screenshots here
+                            <br>
+                            or
+                        </p>
+                        <input type="file" id="fileInput" multiple hidden>
+                        <button type="button" onclick="document.getElementById('fileInput').click()">
+                            Browse Files
+                        </button>
+                    </div>
+                </section>
+
+            </section>
+
+            <!-- ===========================
+                 PAGE: MEMORIES
+            ============================ -->
+            <section class="page" data-page="memories" style="display:none;">
+                <h1 class="page-title">Memories</h1>
+                <p class="page-subtitle">Everything you've saved, all in one place.</p>
+
+                <section class="section1 full-width">
+                    <div class="memory-grid" id="allMemoriesGrid"></div>
+                    <p id="memoriesEmptyMessage" class="empty-message">
+                        No memories found. Try uploading something!
+                    </p>
+                </section>
+            </section>
+
+            <!-- ===========================
+                 PAGE: COLLECTIONS
+            ============================ -->
+            <section class="page" data-page="collections" style="display:none;">
+                <h1 class="page-title">Collections</h1>
+                <p class="page-subtitle">Your memories, grouped automatically by topic.</p>
+
+                <section class="section1 full-width">
+                    <div class="collections-grid" id="collectionsGrid"></div>
+                    <p id="collectionsEmptyMessage" class="empty-message">
+                        No collections yet. Upload a memory to get started!
+                    </p>
+                </section>
+            </section>
+
+            <!-- ===========================
+                 PAGE: IMAGES
+            ============================ -->
+            <section class="page" data-page="images" style="display:none;">
+                <h1 class="page-title">Images</h1>
+                <p class="page-subtitle">All the screenshots and photos you've saved.</p>
+
+                <section class="section1 full-width">
+                    <div class="memory-grid" id="imagesGrid"></div>
+                    <p id="imagesEmptyMessage" class="empty-message">
+                        No images yet.
+                    </p>
+                </section>
+            </section>
+
+            <!-- ===========================
+                 PAGE: AUDIO FILES
+            ============================ -->
+            <section class="page" data-page="audio" style="display:none;">
+                <h1 class="page-title">Audio Files</h1>
+                <p class="page-subtitle">Voice notes and recordings you've saved.</p>
+
+                <section class="section1 full-width">
+                    <div class="memory-grid" id="audioGrid"></div>
+                    <p id="audioEmptyMessage" class="empty-message">
+                        No audio files yet.
+                    </p>
+                </section>
+            </section>
+
+            <!-- ===========================
+                 PAGE: Other Documents
+            ============================ -->
+            <section class="page" data-page="document" style="display:none;">
+                <h1 class="page-title">Other Documents</h1>
+                <p class="page-subtitle">Documents you've saved for later.</p>
+
+                <section class="section1 full-width">
+                    <div class="memory-grid" id="countdoc"></div>
+                    <p id="docEmptyMessage" class="empty-message">
+                        No Documents yet.
+                    </p>
+                </section>
+            </section>
+
+            <!-- ===========================
+                 PAGE: TRASH
+            ============================ -->
+            <section class="page" data-page="trash" style="display:none;">
+                <h1 class="page-title">Trash</h1>
+                <p class="page-subtitle">Deleted memories are kept here until you remove them permanently.</p>
+
+                <section class="section1 full-width">
+                    <div class="memory-grid" id="trashGrid"></div>
+                    <p id="trashEmptyMessage" class="empty-message">
+                        Trash is empty.
+                    </p>
+                </section>
+            </section>
+
+            <footer>
+                <p>Recall &mdash; Remembers what you forgot.</p>
+            </footer>
+
+        </main>
     </div>
 
-    <script src="/frontend/script.js"></script>
-
+    <script src="script.js"></script>
 </body>
 
 </html>
