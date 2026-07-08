@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
 const { analyzeImage } = require("./gemini");
-const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory, searchMemories} = require("./supabase");
+const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory, searchMemories } = require("./supabase");
 
 const storage = multer.diskStorage({
 
@@ -92,15 +92,12 @@ app.get("/memories", async (req, res) => {
 app.patch("/memories/:id/trash", async (req, res) => {
     try {
         const updatedMemory = await trashMemory(req.params.id);
-
         res.json({
             success: true,
             memory: updatedMemory
         });
-
     } catch (error) {
         console.error("Failed to move memory to trash:", error.message);
-
         res.status(500).json({
             success: false,
             error: "Failed to move memory to trash"
@@ -141,17 +138,13 @@ app.delete("/memories/:id", async (req, res) => {
 app.get("/search", async (req, res) => {
     try {
         const query = req.query.q;
-
         const memories = await searchMemories(query);
-
         res.json({
             success: true,
             memories
         });
-
     } catch (error) {
         console.error("Search failed:", error.message);
-
         res.status(500).json({
             success: false,
             error: "Search failed"
@@ -159,6 +152,6 @@ app.get("/search", async (req, res) => {
     }
 });
 
-app.listen (PORT, () =>{
-    console.log (`server is running on http://localhost:${PORT}`)
-})
+app.listen(PORT, () => {
+    console.log(`server is running on http://localhost:${PORT}`);
+});
