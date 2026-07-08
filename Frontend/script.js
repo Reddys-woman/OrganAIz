@@ -299,6 +299,8 @@ function renderDashboard() {
     document.getElementById("countImages").textContent = validMemories.filter(m => classifyType(m) === "image").length;
     document.getElementById("countVoice").textContent = validMemories.filter(m => classifyType(m) === "audio").length;
     document.getElementById("countdoc").textContent = validMemories.filter(m => classifyType(m) === "document").length;
+
+    renderAIRecommendations();
 }
 
 /* =========================================================
@@ -518,36 +520,63 @@ document.addEventListener("click", async function (e) {
     }
 });
 
-/* =========================================================
-   SEARCH (filters whichever memory list is on screen)
-========================================================= */
-searchInput.addEventListener("input", function () {
-    if (currentPage === "memories") {
-        renderMemoriesPage();
-    } else if (currentPage === "dashboard") {
-        // Smart client-side filter of the recent grid too
-        const query = searchInput.value.trim();
-        const validMemories = memories.filter(Boolean);
-        const filtered = query
-            ? validMemories.filter(m => memoryMatchesQuery(m, query))
-            : validMemories.slice(0, 4);
+let isRenderingAI = false;
 
-        memoryGrid.innerHTML = "";
-        filtered.forEach(memory => {
-            const card = createMemoryCard(memory, "normal");
-            if (card) memoryGrid.appendChild(card);
+async function renderAIRecommendations() {
+    if (isRenderingAI) return;
+    isRenderingAI = true;
+
+    const aiGrid = document.getElementById("aiGrid");
+
+    try {
+        const [dupResponse, deadlineResponse] = await Promise.all([
+            fetch(`${API_BASE}/memories/duplicates`),
+            fetch(`${API_BASE}/memories/deadlines`)
+        ]);
+
+        const dupData = await dupResponse.json();
+        const deadlineData = await deadlineResponse.json();
+
+        aiGrid.innerHTML = "";
+
+        dupData.duplicateGroups.forEach(group => {
+            const card = document.createElement("div");
+            card.className = "ai-card blue";
+            card.innerHTML = `
+                <div class="ai-icon">📄</div>
+                <h3>Possible Duplicates</h3>
+                <p>"${group[0].title}" and "${group[1].title}" look similar. Review them?</p>
+                <button data-page-link="memories">Review</button>
+            `;
+            aiGrid.appendChild(card);
         });
-        emptyMessage.classList.toggle("visible", filtered.length === 0);
-    } else if (currentPage === "images") {
-        renderImagesPage();
-    } else if (currentPage === "audio") {
-        renderAudioPage();
-    } else if (currentPage === "document") {
-        renderdocPage();
-    } else if (currentPage === "trash") {
-        renderTrashPage();
+
+        deadlineData.memories.forEach(memory => {
+            const daysUntil = Math.ceil((new Date(memory.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+            const dayText = daysUntil === 0 ? "today" : daysUntil === 1 ? "tomorrow" : `in ${daysUntil} days`;
+
+            const card = document.createElement("div");
+            card.className = "ai-card red";
+            card.innerHTML = `
+                <div class="ai-icon">⏰</div>
+                <h3>Deadline ${dayText}</h3>
+                <p>"${memory.title}" has a deadline on ${memory.deadline}.</p>
+                <button data-page-link="memories">View</button>
+            `;
+            aiGrid.appendChild(card);
+        });
+
+        const emptyMsg = aiGrid.parentElement.querySelector(".empty-message");
+        if (emptyMsg) {
+            emptyMsg.classList.toggle("visible", aiGrid.children.length === 0);
+        }
+
+    } catch (error) {
+        console.error("Failed to load AI recommendations:", error);
+    } finally {
+        isRenderingAI = false;
     }
-});
+}
 
 /* =========================================================
    UPLOAD (unchanged behaviour, now refreshes every relevant page)
