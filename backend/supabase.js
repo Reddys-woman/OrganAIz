@@ -155,6 +155,22 @@ async function findDuplicates() {
   return duplicateGroups;
 }
 
+async function getUpcomingDeadlines() {
+  const { data, error } = await supabase
+    .from("memories")
+    .select("*")
+    .is("deleted_at", null)
+    .not("deadline", "is", null)
+    .gte("deadline", new Date().toISOString().split("T")[0])
+    .order("deadline", { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 module.exports = {
   supabase,
   saveMemory,
@@ -165,5 +181,6 @@ module.exports = {
   getTrashedMemories,
   permanentlyDeleteMemory,
   searchMemories,
-  findDuplicates
+  findDuplicates,
+  getUpcomingDeadlines
 };

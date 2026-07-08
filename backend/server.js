@@ -2,8 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
 const { analyzeImage } = require("./gemini");
-const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory, searchMemories, findDuplicates } = require("./supabase");
-const storage = multer.diskStorage({
+const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory, searchMemories, findDuplicates, getUpcomingDeadlines } = require("./supabase");const storage = multer.diskStorage({
 
     destination: function (req, file, cb) {
         cb(null, "uploads/");
@@ -160,6 +159,16 @@ app.get("/memories/duplicates", async (req, res) => {
     } catch (error) {
         console.error("Failed to find duplicates:", error.message);
         res.status(500).json({ success: false, error: "Failed to find duplicates" });
+    }
+});
+
+app.get("/memories/deadlines", async (req, res) => {
+    try {
+        const upcoming = await getUpcomingDeadlines();
+        res.json({ success: true, memories: upcoming });
+    } catch (error) {
+        console.error("Failed to fetch deadlines:", error.message);
+        res.status(500).json({ success: false, error: "Failed to fetch deadlines" });
     }
 });
 
