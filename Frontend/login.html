@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In — OrganAIz</title>
+    <link rel="stylesheet" href="landing.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .auth-wrap{
+            min-height:calc(100vh - 74px);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:60px 20px;
+        }
+        .auth-card{
+            width:100%;
+            max-width:420px;
+            background:var(--card-bg);
+            border:1px solid var(--card-border);
+            border-radius:22px;
+            padding:36px;
+            box-shadow:0 15px 35px var(--shadow);
+        }
+        .auth-card h1{
+            font-size:26px;
+            margin-bottom:8px;
+        }
+        .auth-card .sub{
+            font-size:14px;
+            color:var(--text-secondary);
+            margin-bottom:26px;
+        }
+        .auth-card form{
+            display:flex;
+            flex-direction:column;
+            gap:16px;
+        }
+        .auth-card label{
+            display:flex;
+            flex-direction:column;
+            gap:8px;
+            font-size:13.5px;
+            font-weight:600;
+            color:var(--text-secondary);
+        }
+        .auth-card input{
+            font-family:inherit;
+            font-size:14.5px;
+            padding:13px 16px;
+            border-radius:12px;
+            border:1px solid var(--card-border);
+            background:var(--surface);
+            color:var(--text);
+        }
+        .auth-card input:focus{
+            outline:none;
+            border-color:var(--accent);
+            box-shadow:0 0 0 4px var(--accent-soft);
+        }
+        .auth-note{
+            font-size:13.5px;
+            font-weight:600;
+            min-height:18px;
+            margin-top:2px;
+        }
+        .auth-note.error{ color:#E5484D; }
+        .auth-note.success{ color:#22B573; }
+        .auth-switch{
+            text-align:center;
+            font-size:14px;
+            color:var(--text-secondary);
+            margin-top:22px;
+        }
+        .auth-switch a{
+            color:var(--accent);
+            font-weight:600;
+        }
+    </style>
+</head>
+<body>
+    <header class="nav">
+        <div class="nav-inner">
+            <a href="index.html" class="brand">
+                <i class="fa-solid fa-brain"></i>
+                <span>OrganAIz</span>
+            </a>
+            <div class="nav-actions">
+                <button id="themeToggle" class="icon-btn" type="button" title="Toggle dark mode">
+                    <i class="fa-regular fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+    <main class="auth-wrap">
+        <div class="auth-card">
+            <h1>Welcome back</h1>
+            <p class="sub">Log in to see your memories.</p>
+            <form id="loginForm">
+                <label>
+                    Email
+                    <input type="email" name="email" placeholder="you@example.com" required>
+                </label>
+                <label>
+                    Password
+                    <input type="password" name="password" placeholder="Your password" required>
+                </label>
+                <button type="submit" class="btn btn-primary btn-lg full" id="loginBtn">Log In</button>
+                <p class="auth-note" id="loginNote"></p>
+            </form>
+            <p class="auth-switch">Don't have an account? <a href="signup.html">Sign up</a></p>
+        </div>
+    </main>
+    <footer class="site-footer">
+        <div class="footer-bottom">
+            <p>&copy; <span id="year"></span> Code Catalyst. All rights reserved.</p>
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="supabase-client.js"></script>
+    <script>
+        // Theme toggle (same as other pages)
+        const themeToggle = document.getElementById("themeToggle");
+        function applyTheme(theme) {
+            const icon = themeToggle.querySelector("i");
+            document.body.classList.toggle("dark", theme === "dark");
+            icon.className = theme === "dark" ? "fa-solid fa-sun" : "fa-regular fa-moon";
+        }
+        applyTheme(localStorage.getItem("organaiz-theme") || "light");
+        themeToggle.addEventListener("click", () => {
+            const next = document.body.classList.contains("dark") ? "light" : "dark";
+            localStorage.setItem("organaiz-theme", next);
+            applyTheme(next);
+        });
+        document.getElementById("year").textContent = new Date().getFullYear();
+
+        // If already logged in, skip straight to the dashboard
+        (async function redirectIfLoggedIn() {
+            const { data: { session } } = await sbClient.auth.getSession();
+            if (session) window.location.href = "dashboard.html";
+        })();
+
+        // Login form
+        const loginForm = document.getElementById("loginForm");
+        const loginNote = document.getElementById("loginNote");
+        const loginBtn = document.getElementById("loginBtn");
+        loginForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            loginNote.textContent = "";
+            loginNote.className = "auth-note";
+            loginBtn.disabled = true;
+            loginBtn.textContent = "Logging in...";
+            const email = loginForm.email.value.trim();
+            const password = loginForm.password.value;
+            const { error } = await sbClient.auth.signInWithPassword({ email, password });
+            loginBtn.disabled = false;
+            loginBtn.textContent = "Log In";
+            if (error) {
+                loginNote.textContent = error.message;
+                loginNote.classList.add("error");
+                return;
+            }
+            window.location.href = "dashboard.html";
+        });
+    </script>
+</body>
+</html>
