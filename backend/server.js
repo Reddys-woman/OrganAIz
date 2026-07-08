@@ -18,6 +18,7 @@ const upload = multer({ storage: storage });
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
 app.use((req, res, next) => {
@@ -179,6 +180,17 @@ app.get("/memories/collection-suggestions", async (req, res) => {
     } catch (error) {
         console.error("Failed to get collection suggestions:", error.message);
         res.status(500).json({ success: false, error: "Failed to get collection suggestions" });
+    }
+});
+
+app.patch("/memories/:id/collection", async (req, res) => {
+    try {
+        const { collection } = req.body;
+        const updated = await updateMemory(req.params.id, { collection });
+        res.json({ success: true, memory: updated });
+    } catch (error) {
+        console.error("Failed to update collection:", error.message);
+        res.status(500).json({ success: false, error: "Failed to update collection" });
     }
 });
 

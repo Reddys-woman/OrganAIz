@@ -492,6 +492,13 @@ document.addEventListener("click", async function (e) {
         showPage("memories");
     }
 
+    const viewCollectionSuggestionBtn = e.target.closest(".view-collection-suggestion-btn");
+    if (viewCollectionSuggestionBtn) {
+        idFilter = viewCollectionSuggestionBtn.dataset.ids.split(",").map(id => parseInt(id));
+        collectionFilter = null;
+        showPage("memories");
+    }
+
      if (pageLinkBtn) {
         e.preventDefault();
         idFilter = null;
@@ -551,18 +558,16 @@ let isRenderingAI = false;
 async function renderAIRecommendations() {
     if (isRenderingAI) return;
     isRenderingAI = true;
-
     const aiGrid = document.getElementById("aiGrid");
-
     try {
-        const [dupResponse, deadlineResponse] = await Promise.all([
+        const [dupResponse, deadlineResponse, collectionResponse] = await Promise.all([
             fetch(`${API_BASE}/memories/duplicates`),
-            fetch(`${API_BASE}/memories/deadlines`)
+            fetch(`${API_BASE}/memories/deadlines`),
+            fetch(`${API_BASE}/memories/collection-suggestions`)
         ]);
-
         const dupData = await dupResponse.json();
         const deadlineData = await deadlineResponse.json();
-
+        const collectionData = await collectionResponse.json();
         aiGrid.innerHTML = "";
 
         dupData.duplicateGroups.forEach(group => {
@@ -588,6 +593,18 @@ async function renderAIRecommendations() {
                 <h3>Deadline ${dayText}</h3>
                 <p>"${memory.title}" has a deadline on ${memory.deadline}.</p>
                 <button class="view-deadline-btn" data-id="${memory.id}">View</button>
+            `;
+            aiGrid.appendChild(card);
+        });
+
+        collectionData.suggestions.forEach(suggestion => {
+            const card = document.createElement("div");
+            card.className = "ai-card yellow";
+            card.innerHTML = `
+                <div class="ai-icon">📂</div>
+                <h3>Organize Memories</h3>
+                <p>You have ${suggestion.count} screenshots related to "${suggestion.tag}". Create a collection?</p>
+                <button class="view-collection-suggestion-btn" data-ids="${suggestion.memoryIds.join(",")}">Review</button>
             `;
             aiGrid.appendChild(card);
         });
