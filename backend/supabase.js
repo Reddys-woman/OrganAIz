@@ -174,26 +174,25 @@ async function getUpcomingDeadlines() {
 async function getCollectionSuggestions() {
   const memories = await getAllMemories();
 
-  const tagCounts = {};
-  const tagToMemories = {};
+  const tagToUngroupedMemories = {};
 
   memories.forEach(memory => {
     (memory.tags || []).forEach(tag => {
-      tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-      if (!tagToMemories[tag]) tagToMemories[tag] = [];
-      tagToMemories[tag].push(memory);
+      if (memory.collection !== tag) {
+        if (!tagToUngroupedMemories[tag]) tagToUngroupedMemories[tag] = [];
+        tagToUngroupedMemories[tag].push(memory);
+      }
     });
   });
 
-  const existingCollections = new Set(memories.map(m => m.collection));
-
   const suggestions = [];
-  for (const tag in tagCounts) {
-    if (tagCounts[tag] >= 2 && !existingCollections.has(tag)) {
+  for (const tag in tagToUngroupedMemories) {
+    const matchingMemories = tagToUngroupedMemories[tag];
+    if (matchingMemories.length >= 2) {
       suggestions.push({
         tag: tag,
-        count: tagCounts[tag],
-        memoryIds: tagToMemories[tag].map(m => m.id)
+        count: matchingMemories.length,
+        memoryIds: matchingMemories.map(m => m.id)
       });
     }
   }

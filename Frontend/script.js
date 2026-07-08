@@ -479,6 +479,8 @@ document.addEventListener("click", async function (e) {
     const pageLinkBtn = e.target.closest("[data-page-link]");
     const reviewDupBtn = e.target.closest(".review-duplicate-btn");
     const viewDeadlineBtn = e.target.closest(".view-deadline-btn");
+    const createCollectionBtn = e.target.closest(".create-collection-btn");
+
 
     if (reviewDupBtn) {
         idFilter = reviewDupBtn.dataset.ids.split(",").map(id => parseInt(id));
@@ -497,6 +499,27 @@ document.addEventListener("click", async function (e) {
         idFilter = viewCollectionSuggestionBtn.dataset.ids.split(",").map(id => parseInt(id));
         collectionFilter = null;
         showPage("memories");
+    }
+
+    if (createCollectionBtn) {
+        const ids = createCollectionBtn.dataset.ids.split(",");
+        const tag = createCollectionBtn.dataset.tag;
+
+        try {
+            await Promise.all(ids.map(id =>
+                fetch(`${API_BASE}/memories/${id}/collection`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ collection: tag })
+                })
+            ));
+            await loadMemories();
+            collectionFilter = tag;
+            showPage("memories");
+        } catch (error) {
+            console.error("Failed to create collection:", error);
+            alert("Couldn't create the collection. Is the backend running?");
+        }
     }
 
      if (pageLinkBtn) {
@@ -604,7 +627,8 @@ async function renderAIRecommendations() {
                 <div class="ai-icon">📂</div>
                 <h3>Organize Memories</h3>
                 <p>You have ${suggestion.count} screenshots related to "${suggestion.tag}". Create a collection?</p>
-                <button class="view-collection-suggestion-btn" data-ids="${suggestion.memoryIds.join(",")}">Review</button>
+                <button class="create-collection-btn" data-ids="${suggestion.memoryIds.join(",")}" data-tag="${suggestion.tag}">Create Collection</button>
+                <button class="view-collection-suggestion-btn" data-ids="${suggestion.memoryIds.join(",")}">Just Review</button>
             `;
             aiGrid.appendChild(card);
         });
