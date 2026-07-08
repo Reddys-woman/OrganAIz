@@ -2,8 +2,8 @@ const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
 const { analyzeImage } = require("./gemini");
-const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory, searchMemories, findDuplicates, getUpcomingDeadlines } = require("./supabase");const storage = multer.diskStorage({
-
+const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory, searchMemories, findDuplicates, getUpcomingDeadlines, getCollectionSuggestions } = require("./supabase");
+const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, "uploads/");
     },
@@ -171,7 +171,17 @@ app.get("/memories/deadlines", async (req, res) => {
         res.status(500).json({ success: false, error: "Failed to fetch deadlines" });
     }
 });
-    
+
+app.get("/memories/collection-suggestions", async (req, res) => {
+    try {
+        const suggestions = await getCollectionSuggestions();
+        res.json({ success: true, suggestions });
+    } catch (error) {
+        console.error("Failed to get collection suggestions:", error.message);
+        res.status(500).json({ success: false, error: "Failed to get collection suggestions" });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`server is running on http://localhost:${PORT}`);
 });

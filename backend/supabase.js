@@ -171,6 +171,38 @@ async function getUpcomingDeadlines() {
   return data;
 }
 
+async function getCollectionSuggestions() {
+  const memories = await getAllMemories();
+
+  const tagCounts = {};
+  const tagToMemories = {};
+
+  memories.forEach(memory => {
+    (memory.tags || []).forEach(tag => {
+      tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      if (!tagToMemories[tag]) tagToMemories[tag] = [];
+      tagToMemories[tag].push(memory);
+    });
+  });
+
+  const existingCollections = new Set(memories.map(m => m.collection));
+
+  const suggestions = [];
+  for (const tag in tagCounts) {
+    if (tagCounts[tag] >= 2 && !existingCollections.has(tag)) {
+      suggestions.push({
+        tag: tag,
+        count: tagCounts[tag],
+        memoryIds: tagToMemories[tag].map(m => m.id)
+      });
+    }
+  }
+
+  suggestions.sort((a, b) => b.count - a.count);
+
+  return suggestions;
+}
+
 module.exports = {
   supabase,
   saveMemory,
@@ -182,5 +214,6 @@ module.exports = {
   permanentlyDeleteMemory,
   searchMemories,
   findDuplicates,
-  getUpcomingDeadlines
+  getUpcomingDeadlines,
+  getCollectionSuggestions
 };
