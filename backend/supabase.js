@@ -119,6 +119,42 @@ async function permanentlyDeleteMemory(id) {
   return { id };
 }
 
+const stringSimilarity = require("string-similarity");
+
+async function findDuplicates() {
+  const memories = await getAllMemories();
+
+  const duplicateGroups = [];
+  const alreadyGrouped = new Set();
+
+  for (let i = 0; i < memories.length; i++) {
+    if (alreadyGrouped.has(memories[i].id)) continue;
+
+    const group = [memories[i]];
+
+    for (let j = i + 1; j < memories.length; j++) {
+      if (alreadyGrouped.has(memories[j].id)) continue;
+
+      const similarity = stringSimilarity.compareTwoStrings(
+        memories[i].title.toLowerCase(),
+        memories[j].title.toLowerCase()
+      );
+
+      if (similarity > 0.6) {
+        group.push(memories[j]);
+        alreadyGrouped.add(memories[j].id);
+      }
+    }
+
+    if (group.length > 1) {
+      alreadyGrouped.add(memories[i].id);
+      duplicateGroups.push(group);
+    }
+  }
+
+  return duplicateGroups;
+}
+
 module.exports = {
   supabase,
   saveMemory,
@@ -128,5 +164,6 @@ module.exports = {
   restoreMemory,
   getTrashedMemories,
   permanentlyDeleteMemory,
-  searchMemories
+  searchMemories,
+  findDuplicates
 };

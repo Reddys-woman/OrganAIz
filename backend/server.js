@@ -2,8 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
 const { analyzeImage } = require("./gemini");
-const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory, searchMemories } = require("./supabase");
-
+const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory, searchMemories, findDuplicates } = require("./supabase");
 const storage = multer.diskStorage({
 
     destination: function (req, file, cb) {
@@ -149,6 +148,16 @@ app.get("/search", async (req, res) => {
             success: false,
             error: "Search failed"
         });
+    }
+});
+
+app.get("/memories/duplicates", async (req, res) => {
+    try {
+        const duplicates = await findDuplicates();
+        res.json({ success: true, duplicateGroups: duplicates });
+    } catch (error) {
+        console.error("Failed to find duplicates:", error.message);
+        res.status(500).json({ success: false, error: "Failed to find duplicates" });
     }
 });
 
