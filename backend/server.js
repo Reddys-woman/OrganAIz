@@ -46,7 +46,8 @@ app.post("/upload", upload.single("image"), async (req, res) => {
             title: "Processing...",
             summary: "AI analysis in progress",
             tags: [],
-            collection: "Inbox"
+            collection: "Inbox",
+            deadline: null
         });
 
         res.json({
@@ -61,7 +62,8 @@ app.post("/upload", upload.single("image"), async (req, res) => {
                     title: analysis.title,
                     summary: analysis.summary,
                     tags: analysis.tags,
-                    collection: analysis.collection
+                    collection: analysis.collection,
+                    deadline: analysis.deadline
                 });
                 console.log(`Memory ${placeholderMemory.id} updated with AI analysis`);
             })

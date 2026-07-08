@@ -12,13 +12,15 @@ Look at the image and respond with ONLY a valid JSON object in this exact format
   "title": "A short, specific title (max 8 words)",
   "summary": "A 1-2 sentence summary of what this screenshot contains",
   "tags": ["tag1", "tag2", "tag3"],
-  "collection": "A short 1-2 word category name that best fits this content (e.g. Hackathon, Study, Shopping, Design, Travel, Recipes, Finance, etc.)"
+  "collection": "A short 1-2 word category name that best fits this content (e.g. Hackathon, Study, Shopping, Design, Travel, Recipes, Finance, etc.)",
+  "deadline": "If this screenshot mentions a specific date, due date, or deadline, return it in YYYY-MM-DD format. If no date is mentioned, return null (not the string 'null', an actual null value)."
 }
 
 Rules:
 - title must be specific to the content, not generic like "Screenshot" or "Image"
 - tags should be 2-4 relevant single or two-word keywords
 - collection should be a concise, sensible category based on the actual content — invent one if none of the examples fit
+- deadline should only be filled in if an actual date is clearly mentioned or stated in the image (e.g. "Due: July 15", "Submit by 12/03/2026"). If the image mentions a relative time like "in 2 days" without a specific date, do your best to leave it as null unless a clear absolute date is present.
 - Return ONLY the JSON object, nothing else`;
 
 function imageToBase64(filePath) {
