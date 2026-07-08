@@ -145,12 +145,28 @@ function isToday(isoString) {
     return date.toDateString() === now.toDateString();
 }
 
+// Common raster image formats (note: browsers can only visually preview a subset
+// of these via <img> - see PREVIEWABLE_IMAGE_EXT below. Formats like PSD/RAW/INDD
+// are still recognized, tagged, and stored as "images", just shown with a file icon
+// instead of a live thumbnail since no browser can decode them natively.
+const IMAGE_EXT = /\.(jpe?g|png|gif|webp|tiff?|bmp|heic|heif|psd|raw|cr2|nef|arw|dng|rw2|orf|jp2|j2k|indd|svg)$/i;
+const PREVIEWABLE_IMAGE_EXT = /\.(jpe?g|png|gif|webp|bmp|svg)$/i;
+
+const AUDIO_EXT = /\.(mp3|wav|m4a|ogg|oga|flac|aac|opus|wma|aiff?)$/i;
+
+const DOC_EXT = /\.(pdf|docx?|xlsx?|pptx?|txt|csv|rtf|odt|ods|odp)$/i;
+
 function classifyType(memory) {
     const filename = (memory && memory.filename) || "";
-    if (/\.(png|jpe?g|gif|webp)$/i.test(filename)) return "image";
-    if (/\.(mp3|wav|m4a|ogg)$/i.test(filename)) return "audio";
-    if (/\.doc$/i.test(filename)) return "doc";
+    if (IMAGE_EXT.test(filename)) return "image";
+    if (AUDIO_EXT.test(filename)) return "audio";
+    if (DOC_EXT.test(filename)) return "document";
     return "other";
+}
+
+function isPreviewableImage(memory) {
+    const filename = (memory && memory.filename) || "";
+    return PREVIEWABLE_IMAGE_EXT.test(filename);
 }
 
 function createMemoryCard(memory, mode) {
@@ -177,9 +193,26 @@ function createMemoryCard(memory, mode) {
            </div>`
         : "";
 
+    const fileUrl = `${API_BASE}/uploads/${memory.filename || ""}`;
+    const type = classifyType(memory);
+
+    // Real, browser-decodable images get a clickable thumbnail + lightbox preview.
+    // Everything else (audio, documents, and image formats no browser can render
+    // natively -- PSD/RAW/TIFF/INDD) gets a representative icon instead of a
+    // broken <img>.
+    let mediaHtml;
+    if (type === "image" && isPreviewableImage(memory)) {
+        mediaHtml = `<img src="${fileUrl}" class="preview-img" data-fullsrc="${fileUrl}" alt="${memory.title || "Memory image"}">`;
+    } else {
+        const iconClass = type === "audio" ? "fa-solid fa-music"
+            : type === "document" ? "fa-solid fa-file-lines"
+            : "fa-solid fa-image"; // unsupported-preview image formats (psd/raw/tiff/indd...)
+        mediaHtml = `<div class="file-icon-placeholder"><i class="${iconClass}"></i></div>`;
+    }
+
     card.innerHTML = `
         <div class="memory-image-wrap">
-            <img src="${API_BASE}/uploads/${memory.filename || ""}">
+            ${mediaHtml}
             ${trashIconHtml}
         </div>
         <div class="memory-content">
@@ -197,6 +230,43 @@ function createMemoryCard(memory, mode) {
 }
 
 /* =========================================================
+   SMART SEARCH
+   Matches a query against everything we know about a memory:
+   title, AI summary (which describes the actual on-screen
+   content), tags, collection name, and the original filename
+   -- so you can search in plain language, not just filenames.
+========================================================= */
+function cleanFilename(filename) {
+    return (filename || "")
+        .replace(/^\d+-/, "")       // strip the "1720000000000-" timestamp prefix multer adds
+        .replace(/[_-]+/g, " ")     // underscores/dashes -> spaces
+        .replace(/\.[a-z0-9]+$/i, ""); // drop the file extension
+}
+
+function memoryMatchesQuery(memory, query) {
+    if (!query) return true;
+    const haystack = [
+        memory.title,
+        memory.summary,
+        memory.collection,
+        cleanFilename(memory.filename),
+        ...(memory.tags || [])
+    ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+    // Every word in the query must appear somewhere in the haystack --
+    // lets "hackathon deadline" match a memory that mentions both words
+    // anywhere across title/summary/tags, not just as one exact phrase.
+    return query
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean)
+        .every(word => haystack.includes(word));
+}
+
+/* =========================================================
    DASHBOARD (recent memories, stats)
 ========================================================= */
 function renderDashboard() {
@@ -207,7 +277,15 @@ function renderDashboard() {
         const card = createMemoryCard(memory, "normal");
         if (card) memoryGrid.appendChild(card);
     });
-    emptyMessage.classList.toggle("visible", memories.length === 0);
+
+    if (!memoriesLoaded) {
+        emptyMessage.textContent = "Loading your memories...";
+        emptyMessage.classList.add("visible", "loading");
+    } else {
+        emptyMessage.textContent = "Well... It feels light. Upload some files!";
+        emptyMessage.classList.remove("loading");
+        emptyMessage.classList.toggle("visible", memories.length === 0);
+    }
 
     // Stats
     const validMemories = memories.filter(Boolean);
@@ -233,14 +311,7 @@ function renderMemoriesPage() {
     if (collectionFilter) {
         filtered = filtered.filter(m => m.collection === collectionFilter);
     }
-    if (query) {
-        filtered = filtered.filter(m =>
-            (m.title || "").toLowerCase().includes(query) ||
-            (m.summary || "").toLowerCase().includes(query) ||
-            (m.collection || "").toLowerCase().includes(query) ||
-            (m.tags || []).some(t => t.toLowerCase().includes(query))
-        );
-    }
+    filtered = filtered.filter(m => memoryMatchesQuery(m, query));
 
     allMemoriesGrid.innerHTML = "";
     filtered.forEach(memory => {
@@ -295,32 +366,48 @@ function renderCollectionsPage() {
    IMAGES / AUDIO / PDF PAGES
    Same idea as Memories, just pre-filtered by file type.
 ========================================================= */
-function renderTypeFilteredPage(type, grid, emptyMsgEl) {
-    const filtered = memories.filter(Boolean).filter(m => classifyType(m) === type);
+function renderTypeFilteredPage(type, grid, emptyMsgEl, emptyText) {
+    const query = searchInput.value.trim();
+    const filtered = memories
+        .filter(Boolean)
+        .filter(m => classifyType(m) === type)
+        .filter(m => memoryMatchesQuery(m, query));
+
     grid.innerHTML = "";
     filtered.forEach(memory => {
         const card = createMemoryCard(memory, "normal");
         if (card) grid.appendChild(card);
     });
-    emptyMsgEl.classList.toggle("visible", filtered.length === 0);
+
+    if (!memoriesLoaded) {
+        emptyMsgEl.textContent = "Loading...";
+        emptyMsgEl.classList.add("visible", "loading");
+    } else {
+        emptyMsgEl.textContent = emptyText;
+        emptyMsgEl.classList.remove("loading");
+        emptyMsgEl.classList.toggle("visible", filtered.length === 0);
+    }
 }
 
 function renderImagesPage() {
-    renderTypeFilteredPage("image", imagesGrid, imagesEmptyMessage);
+    renderTypeFilteredPage("image", imagesGrid, imagesEmptyMessage, "No images yet.");
 }
 
 function renderAudioPage() {
-    renderTypeFilteredPage("audio", audioGrid, audioEmptyMessage);
+    renderTypeFilteredPage("audio", audioGrid, audioEmptyMessage, "No audio files yet.");
 }
 
 function renderdocPage() {
-    renderTypeFilteredPage("doc", docGrid, docEmptyMessage);
+    renderTypeFilteredPage("document", docGrid, docEmptyMessage, "No Documents yet.");
 }
 
 /* =========================================================
    TRASH PAGE
 ========================================================= */
+let trashLoaded = false; // true once we've attempted the first fetch (success OR failure)
+
 async function loadTrash() {
+    renderTrashPage(); // show the loading state immediately, don't wait on the network
     try {
         const response = await fetch(`${API_BASE}/trash`);
         const data = await response.json();
@@ -328,17 +415,39 @@ async function loadTrash() {
     } catch (error) {
         console.error("Failed to load trash:", error);
         trashedMemories = [];
+    } finally {
+        trashLoaded = true;
+        renderTrashPage();
     }
-    renderTrashPage();
 }
 
 function renderTrashPage() {
+    const query = searchInput.value.trim();
+    const filtered = trashedMemories.filter(Boolean).filter(m => memoryMatchesQuery(m, query));
+
     trashGrid.innerHTML = "";
-    trashedMemories.filter(Boolean).forEach(memory => {
+    filtered.forEach(memory => {
         const card = createMemoryCard(memory, "trash");
         if (card) trashGrid.appendChild(card);
     });
-    trashEmptyMessage.classList.toggle("visible", trashedMemories.filter(Boolean).length === 0);
+
+    // Only claim "Trash is empty" when there truly is nothing in trash --
+    // if a search query is just filtering the view, or we're still waiting
+    // on the first fetch, say so instead.
+    if (!trashLoaded) {
+        trashEmptyMessage.textContent = "Loading trash...";
+        trashEmptyMessage.classList.add("visible", "loading");
+    } else if (trashedMemories.filter(Boolean).length === 0) {
+        trashEmptyMessage.textContent = "Trash is empty.";
+        trashEmptyMessage.classList.remove("loading");
+        trashEmptyMessage.classList.add("visible");
+    } else if (filtered.length === 0) {
+        trashEmptyMessage.textContent = "No trashed items match your search.";
+        trashEmptyMessage.classList.remove("loading");
+        trashEmptyMessage.classList.add("visible");
+    } else {
+        trashEmptyMessage.classList.remove("visible", "loading");
+    }
 }
 
 /* =========================================================
@@ -351,7 +460,7 @@ function refreshCurrentPage() {
     else if (currentPage === "collections") renderCollectionsPage();
     else if (currentPage === "images") renderImagesPage();
     else if (currentPage === "audio") renderAudioPage();
-    else if (currentPage === "doc") renderdocPage();
+    else if (currentPage === "document") renderdocPage();
 }
 
 /* =========================================================
@@ -416,13 +525,11 @@ searchInput.addEventListener("input", function () {
     if (currentPage === "memories") {
         renderMemoriesPage();
     } else if (currentPage === "dashboard") {
-        // Simple client-side filter of the recent grid too
-        const query = searchInput.value.trim().toLowerCase();
+        // Smart client-side filter of the recent grid too
+        const query = searchInput.value.trim();
         const validMemories = memories.filter(Boolean);
         const filtered = query
-            ? validMemories.filter(m =>
-                (m.title || "").toLowerCase().includes(query) ||
-                (m.summary || "").toLowerCase().includes(query))
+            ? validMemories.filter(m => memoryMatchesQuery(m, query))
             : validMemories.slice(0, 4);
 
         memoryGrid.innerHTML = "";
@@ -431,6 +538,14 @@ searchInput.addEventListener("input", function () {
             if (card) memoryGrid.appendChild(card);
         });
         emptyMessage.classList.toggle("visible", filtered.length === 0);
+    } else if (currentPage === "images") {
+        renderImagesPage();
+    } else if (currentPage === "audio") {
+        renderAudioPage();
+    } else if (currentPage === "document") {
+        renderdocPage();
+    } else if (currentPage === "trash") {
+        renderTrashPage();
     }
 });
 
@@ -441,15 +556,23 @@ uploadBtn.addEventListener("click", function () {
     fileInput.click();
 });
 
+let memoriesLoaded = false; // true once we've attempted the first fetch (success OR failure)
+
 async function loadMemories() {
+    refreshCurrentPage(); // show the loading state immediately, don't wait on the network
     try {
         const response = await fetch(`${API_BASE}/memories`);
         const data = await response.json();
         if (!data.success) throw new Error(data.error || "Server returned an error");
         memories = (data.memories || []).filter(Boolean);
-        refreshCurrentPage();
     } catch (error) {
         console.error("Failed to load memories:", error);
+        // Fall through and still re-render below -- previously a failed/slow
+        // first fetch left the dashboard blank until you navigated away and
+        // back, since the render call lived inside this try block.
+    } finally {
+        memoriesLoaded = true;
+        refreshCurrentPage();
     }
 }
 
@@ -515,6 +638,38 @@ dropZone.addEventListener("drop", function (event) {
     const file = event.dataTransfer.files[0];
     if (!file) return;
     uploadFile(file);
+});
+
+/* =========================================================
+   IMAGE LIGHTBOX
+========================================================= */
+const imageLightbox = document.getElementById("imageLightbox");
+const lightboxImg = document.getElementById("lightboxImg");
+const lightboxClose = document.getElementById("lightboxClose");
+
+function openLightbox(src) {
+    lightboxImg.src = src;
+    imageLightbox.classList.add("visible");
+}
+
+function closeLightbox() {
+    imageLightbox.classList.remove("visible");
+    lightboxImg.src = "";
+}
+
+document.addEventListener("click", function (e) {
+    const previewImg = e.target.closest(".preview-img");
+    if (previewImg) {
+        openLightbox(previewImg.dataset.fullsrc);
+    }
+});
+
+lightboxClose.addEventListener("click", closeLightbox);
+imageLightbox.addEventListener("click", function (e) {
+    if (e.target === imageLightbox) closeLightbox(); // click on the dark backdrop, not the image
+});
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeLightbox();
 });
 
 /* =========================================================

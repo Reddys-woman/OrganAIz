@@ -526,6 +526,62 @@ SECTIONS
     display:block;
 }
 
+.empty-message.loading{
+    color:var(--empty-text);
+    filter: opacity(0.6);
+}
+
+/* ===========================
+IMAGE PREVIEW / LIGHTBOX
+=========================== */
+.memory-image-wrap img{
+    cursor:pointer;
+}
+
+.lightbox{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(10,10,15,0.85);
+    z-index:999;
+    align-items:center;
+    justify-content:center;
+    padding:40px;
+}
+
+.lightbox.visible{
+    display:flex;
+}
+
+.lightbox img{
+    max-width:90vw;
+    max-height:90vh;
+    border-radius:12px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+
+.lightbox-close{
+    position:absolute;
+    top:28px;
+    right:36px;
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    border:none;
+    background:rgba(255,255,255,0.12);
+    color:#fff;
+    font-size:18px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:.2s;
+}
+
+.lightbox-close:hover{
+    background:rgba(255,255,255,0.25);
+}
+
 .section2{
     background:var(--card-bg);
     min-height: 150px;
@@ -589,6 +645,25 @@ MEMORY CARD
     height:180px;
     object-fit:cover;
     background:#ececec;
+}
+
+.file-icon-placeholder{
+    width:100%;
+    height:180px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--card-bg, #ececec);
+    background:linear-gradient(160deg, #EDE9FB, #E3F0FC);
+}
+
+body.dark .file-icon-placeholder{
+    background:linear-gradient(160deg, #2A2740, #1E2A38);
+}
+
+.file-icon-placeholder i{
+    font-size:44px;
+    color:#9C8FEE;
 }
 
 .trash-icon-btn{
