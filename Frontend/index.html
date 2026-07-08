@@ -183,7 +183,7 @@
                             <br>
                             or
                         </p>
-                        <input type="file" id="fileInput" multiple hidden>
+                        <input type="file" id="fileInput" multiple hidden accept=".jpg,.jpeg,.png,.gif,.webp,.tiff,.tif,.bmp,.heic,.heif,.psd,.raw,.cr2,.nef,.arw,.dng,.rw2,.orf,.jp2,.j2k,.svg,.mp3,.wav,.m4a,.ogg,.oga,.flac,.aac,.opus,.wma,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv">
                         <button type="button" onclick="document.getElementById('fileInput').click()">
                             Browse Files
                         </button>
@@ -260,7 +260,7 @@
                 <p class="page-subtitle">Documents you've saved for later.</p>
 
                 <section class="section1 full-width">
-                    <div class="memory-grid" id="countdoc"></div>
+                    <div class="memory-grid" id="docGrid"></div>
                     <p id="docEmptyMessage" class="empty-message">
                         No Documents yet.
                     </p>
@@ -287,6 +287,16 @@
             </footer>
 
         </main>
+    </div>
+
+    <!-- ===========================
+         IMAGE LIGHTBOX (click any image thumbnail to open)
+    ============================ -->
+    <div id="imageLightbox" class="lightbox">
+        <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Close preview">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <img id="lightboxImg" src="" alt="Preview">
     </div>
 
     <script src="script.js"></script>
