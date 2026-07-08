@@ -121,13 +121,13 @@ function applyTheme(theme) {
     }
 }
 
-const savedTheme = localStorage.getItem("recall-theme") || "light";
+const savedTheme = localStorage.getItem("organaiz-theme") || "light";
 applyTheme(savedTheme);
 
 themeToggle.addEventListener("click", function () {
     const isDark = document.body.classList.contains("dark");
     const nextTheme = isDark ? "light" : "dark";
-    localStorage.setItem("recall-theme", nextTheme);
+    localStorage.setItem("organaiz-theme", nextTheme);
     applyTheme(nextTheme);
 });
 

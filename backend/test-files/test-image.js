@@ -4,7 +4,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const PROMPT = `You are analyzing a screenshot for a memory-organizing app called Recall.
+const PROMPT = `You are analyzing a screenshot for a memory-organizing app called OrganAIz.
 
 Look at the image and respond with ONLY a valid JSON object in this exact format, with no extra text, no explanations, and no markdown formatting:
 

@@ -33,7 +33,7 @@ app.get("/", (req, res) => {
 
     console.log("Request received!");
 
-    res.send("Hello from Recall Backend!");
+    res.send("Hello from OrganAIz Backend!");
 
 });
 

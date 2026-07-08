@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms &amp; Conditions — OrganAIz</title>
+    <link rel="stylesheet" href="landing.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <header class="nav">
+        <div class="nav-inner">
+            <a href="index.html" class="brand">
+                <i class="fa-solid fa-brain"></i>
+                <span>OrganAIz</span>
+            </a>
+            <div class="nav-actions">
+                <button id="themeToggle" class="icon-btn" type="button" title="Toggle dark mode">
+                    <i class="fa-regular fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="legal-page">
+        <a href="index.html" class="back-home"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
+
+        <h1>Terms &amp; Conditions</h1>
+        <p class="legal-updated">Last updated: July 2026</p>
+
+        <div class="legal-disclaimer">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>This is a template Terms &amp; Conditions document provided as a starting point for OrganAIz.
+                It has not been reviewed by a lawyer. Please have it checked by a qualified legal professional
+                for your jurisdiction before relying on it for a live product.</span>
+        </div>
+
+        <h2>1. Acceptance of Terms</h2>
+        <p>By creating an account or otherwise using OrganAIz ("the Service"), operated by Code Catalyst
+            ("we," "us," "our"), you agree to be bound by these Terms &amp; Conditions. If you do not agree,
+            please do not use the Service.</p>
+
+        <h2>2. Description of Service</h2>
+        <p>OrganAIz lets you upload images, voice recordings, PDFs, and documents ("Content"), which are then
+            automatically analyzed, tagged, summarized, and organized into collections using artificial
+            intelligence. The Service also provides search, browsing, and a Trash/Restore mechanism for
+            managing your Content.</p>
+
+        <h2>3. Accounts</h2>
+        <p>Some features may require an account. You're responsible for keeping your login credentials
+            secure and for all activity that happens under your account. Tell us right away if you suspect
+            unauthorized access.</p>
+
+        <h2>4. Your Content</h2>
+        <p>You retain ownership of everything you upload. By uploading Content, you grant Code Catalyst a
+            limited license to store, process, and analyze that Content solely to provide and improve the
+            Service for you — including sending it to third-party AI providers (see Section 5) for analysis.</p>
+        <p>You're responsible for making sure you have the right to upload the Content you save, and for not
+            uploading anything illegal, infringing, or harmful to others.</p>
+
+        <h2>5. Third-Party Services</h2>
+        <p>OrganAIz relies on third-party providers to operate:</p>
+        <ul>
+            <li><strong>Google Gemini API</strong> — used to analyze uploaded Content and generate titles,
+                summaries, and tags.</li>
+            <li><strong>Supabase</strong> — used to store your account data and Content metadata.</li>
+        </ul>
+        <p>Your use of the Service is also subject to the applicable terms of these providers.</p>
+
+        <h2>6. Trash &amp; Deletion</h2>
+        <p>Deleted Content is moved to Trash and kept there until you restore it or permanently delete it.
+            Once permanently deleted, Content cannot be recovered.</p>
+
+        <h2>7. Acceptable Use</h2>
+        <p>You agree not to use OrganAIz to store or distribute unlawful, infringing, or harmful material, to
+            attempt to disrupt or reverse-engineer the Service, or to access accounts other than your own.</p>
+
+        <h2>8. Service Availability</h2>
+        <p>We aim to keep OrganAIz available and reliable but don't guarantee uninterrupted access. Features
+            may change, and the Service may occasionally be unavailable for maintenance or updates.</p>
+
+        <h2>9. Limitation of Liability</h2>
+        <p>The Service is provided "as is." To the fullest extent permitted by law, Code Catalyst is not
+            liable for indirect, incidental, or consequential damages arising from your use of the Service,
+            including loss of data. We recommend keeping independent copies of anything irreplaceable.</p>
+
+        <h2>10. Termination</h2>
+        <p>You may stop using OrganAIz at any time. We may suspend or terminate accounts that violate these
+            Terms.</p>
+
+        <h2>11. Changes to These Terms</h2>
+        <p>We may update these Terms from time to time. Continued use of the Service after changes take
+            effect means you accept the updated Terms.</p>
+
+        <h2>12. Governing Law</h2>
+        <p>These Terms are governed by the laws of India, without regard to conflict-of-law principles,
+            unless otherwise required by local law where you reside.</p>
+
+        <h2>13. Contact</h2>
+        <p>Questions about these Terms? Reach us at <strong>support@organaiz.app</strong>.</p>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-bottom">
+            <p>&copy; <span id="year"></span> Code Catalyst. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Minimal inline script: theme toggle + year (this page doesn't need the full landing.js)
+        const themeToggle = document.getElementById("themeToggle");
+        function applyTheme(theme) {
+            const icon = themeToggle.querySelector("i");
+            document.body.classList.toggle("dark", theme === "dark");
+            icon.className = theme === "dark" ? "fa-solid fa-sun" : "fa-regular fa-moon";
+        }
+        applyTheme(localStorage.getItem("organaiz-theme") || "light");
+        themeToggle.addEventListener("click", () => {
+            const next = document.body.classList.contains("dark") ? "light" : "dark";
+            localStorage.setItem("organaiz-theme", next);
+            applyTheme(next);
+        });
+        document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+</body>
+
+</html>

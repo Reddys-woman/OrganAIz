@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — OrganAIz</title>
+    <link rel="stylesheet" href="landing.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <header class="nav">
+        <div class="nav-inner">
+            <a href="index.html" class="brand">
+                <i class="fa-solid fa-brain"></i>
+                <span>OrganAIz</span>
+            </a>
+            <div class="nav-actions">
+                <button id="themeToggle" class="icon-btn" type="button" title="Toggle dark mode">
+                    <i class="fa-regular fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="legal-page">
+        <a href="index.html" class="back-home"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
+
+        <h1>Privacy Policy</h1>
+        <p class="legal-updated">Last updated: July 2026</p>
+
+        <div class="legal-disclaimer">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>This is a template Privacy Policy provided as a starting point for OrganAIz. It has not
+                been reviewed by a lawyer. Please have it checked by a qualified legal professional for your
+                jurisdiction — especially around data protection laws like GDPR or India's DPDP Act — before
+                relying on it for a live product.</span>
+        </div>
+
+        <h2>1. What We Collect</h2>
+        <p>When you use OrganAIz, we may collect:</p>
+        <ul>
+            <li><strong>Content you upload</strong> — images, voice recordings, PDFs, and documents, along
+                with the titles, summaries, tags, and collections our AI generates from them.</li>
+            <li><strong>Account information</strong> — such as your name and email, once accounts are enabled.</li>
+            <li><strong>Usage &amp; preference data</strong> — like your dark/light mode preference, stored
+                locally in your browser.</li>
+        </ul>
+
+        <h2>2. How We Use It</h2>
+        <p>We use your information to:</p>
+        <ul>
+            <li>Analyze and organize the Content you upload (titles, summaries, tags, collections).</li>
+            <li>Provide search, browsing, and Trash/Restore functionality.</li>
+            <li>Maintain and improve the Service.</li>
+            <li>Respond to support requests you send us.</li>
+        </ul>
+
+        <h2>3. AI Processing</h2>
+        <p>Uploaded Content is sent to the <strong>Google Gemini API</strong> so it can be read and analyzed
+            to generate titles, summaries, and tags automatically. Google's own privacy terms apply to how
+            they process this data during analysis.</p>
+
+        <h2>4. Where Your Data Is Stored</h2>
+        <p>Your Content and its metadata are stored using <strong>Supabase</strong>, a third-party database
+            and storage provider. We take reasonable steps to keep this data secure, but no method of
+            electronic storage is 100% secure.</p>
+
+        <h2>5. Cookies &amp; Local Storage</h2>
+        <p>OrganAIz uses your browser's local storage to remember simple preferences, like whether you've
+            chosen dark or light mode. This stays on your device and isn't used for tracking or advertising.</p>
+
+        <h2>6. Data Retention &amp; Deletion</h2>
+        <p>When you delete a memory, it moves to Trash, where it stays until you restore it or permanently
+            delete it. Permanently deleted Content is removed from our systems and cannot be recovered. You
+            can request full deletion of your account and associated data by contacting us.</p>
+
+        <h2>7. Third-Party Service Providers</h2>
+        <p>We share data only with the service providers needed to run OrganAIz — currently Google (Gemini
+            API, for content analysis) and Supabase (data storage). We don't sell your data to advertisers or
+            other third parties.</p>
+
+        <h2>8. Children's Privacy</h2>
+        <p>OrganAIz is not directed at children under 13, and we don't knowingly collect information from
+            them. If you believe a child has provided us with personal information, please contact us so we
+            can remove it.</p>
+
+        <h2>9. Your Rights</h2>
+        <p>Depending on where you live, you may have the right to access, correct, export, or delete your
+            personal data. To exercise any of these rights, contact us at the email below.</p>
+
+        <h2>10. Changes to This Policy</h2>
+        <p>We may update this Privacy Policy from time to time. We'll update the "Last updated" date above
+            when we do.</p>
+
+        <h2>11. Contact</h2>
+        <p>Questions about this Privacy Policy or your data? Reach us at <strong>support@organaiz.app</strong>.</p>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-bottom">
+            <p>&copy; <span id="year"></span> Code Catalyst. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById("themeToggle");
+        function applyTheme(theme) {
+            const icon = themeToggle.querySelector("i");
+            document.body.classList.toggle("dark", theme === "dark");
+            icon.className = theme === "dark" ? "fa-solid fa-sun" : "fa-regular fa-moon";
+        }
+        applyTheme(localStorage.getItem("organaiz-theme") || "light");
+        themeToggle.addEventListener("click", () => {
+            const next = document.body.classList.contains("dark") ? "light" : "dark";
+            localStorage.setItem("organaiz-theme", next);
+            applyTheme(next);
+        });
+        document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+</body>
+
+</html>

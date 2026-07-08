@@ -4,302 +4,548 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="OrganAIz is the AI-powered memory organizer that turns every screenshot, voice note, and PDF you save into something you can actually find again.">
 
-    <title>Recall - Remembers what you Forgot</title>
+    <title>OrganAIz — Capture Everything. Forget Nothing.</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="landing.css">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css">
 
-    <!-- Google Font -->
+    <!-- Google Fonts: Sora for display headings, Inter for body (matches the dashboard) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-
 </head>
 
 <body>
-    <div class="container">
-        <!-- ===========================
-             SIDEBAR (stays fixed, never re-rendered)
-        ============================ -->
-        <aside class="sidebar">
-            <div>
-                <div class="logo">
-                    <i class="fa-solid fa-brain"></i>
-                    <h1>Recall</h1>
-                </div>
-
-                <!-- Upload Button -->
-                <button class="upload-btn" id="uploadBtn" type="button">
-                    <i class="fa-solid fa-plus"></i>
-                    <div>
-                        <h3>Add Memory</h3>
-                        <p>Upload</p>
-                    </div>
-                </button>
-
-                <!-- Navigation -->
-                <nav class="menu">
-                    <a href="#" class="active" data-page="dashboard">
-                        <i class="fa-solid fa-house"></i>
-                    </a>
-                    <a href="#" data-page="memories">
-                        <i class="fa-solid fa-image"></i>
-                    </a>
-                    <a href="#" data-page="collections">
-                        <i class="fa-solid fa-folder"></i>
-                    </a>
-                    <a href="#" data-page="trash">
-                        <i class="fa-solid fa-trash"></i>
-                    </a>
-                </nav>
-
-                <!-- Sources (also act as page links) -->
-                <div class="sources">
-                    <h4>YOUR FILES</h4>
-
-                    <div class="source" data-page="images">
-                        <span class="types">
-                            <i class="fa-regular fa-image images"></i>
-                        </span>
-                        <span class="count" id="countImages">0</span>
-                    </div>
-
-                    <div class="source" data-page="audio">
-                        <span class="types">
-                            <i class="fa-solid fa-microphone voice-notes"></i>
-                        </span>
-                        <span class="count" id="countVoice">0</span>
-                    </div>
-
-                    <div class="source" data-page="document">
-                        <span class="types">
-                            <i class="fa-regular fa-file doc"></i>
-                        </span>
-                        <span class="count" id="countdoc">0</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bottom Sidebar -->
-            <div>
-                <div class="storage-card">
-                    <h3>Storage Used</h3>
-                    <div class="progress">
-                        <div class="progress-fill"></div>
-                    </div>
-                    <p> GB / 10 GB</p>
-                </div>
-            </div>
-        </aside>
-
-        <!-- ===========================
-             MAIN CONTENT (topbar stays fixed, #pageContainer swaps)
-        ============================ -->
-        <main class="content">
-
-            <!-- Top Bar - stays the same across every page -->
-            <header class="topbar">
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="searchInput"
-                        placeholder='Search your memories... (e.g. "hackathon deadline", "shopping list")'>
-                </div>
-
-                <div class="top-icons">
-                    <button id="themeToggle" type="button" title="Toggle dark mode">
-                        <i class="fa-regular fa-moon"></i>
-                    </button>
-                    <img src="images/profile.jpg" alt="Profile">
-                </div>
-            </header>
-
-            <!-- ===========================
-                 PAGE: DASHBOARD
-            ============================ -->
-            <section class="page" data-page="dashboard">
-
-                <section class="hero">
-                    <div>
-                        <h1>Welcome, User! 👋</h1>
-                    </div>
-                </section>
-
-                <section class="stats">
-                    <div class="stat-card">
-                        <i class="fa-solid fa-box purple"></i>
-                        <h2 id="statTotal">0</h2>
-                        <p>Total Memories</p>
-                    </div>
-
-                    <div class="stat-card">
-                        <i class="fa-solid fa-calendar purple2"></i>
-                        <h2 id="statToday">0</h2>
-                        <p>Today</p>
-                    </div>
-
-                    <div class="stat-card">
-                        <i class="fa-solid fa-folder purple3"></i>
-                        <h2 id="statCollections">0</h2>
-                        <p>Collections</p>
-                    </div>
-
-                    <div class="stat-card">
-                        <i class="fa-solid fa-fire purple4"></i>
-                        <h2 id="statStreak">0 days</h2>
-                        <p>Recall Streak</p>
-                    </div>
-                </section>
-
-                <section class="section1 full-width">
-                    <div class="section-header">
-                        <h2>Recent Memories</h2>
-                        <a href="#" data-page-link="memories">View All</a>
-                    </div>
-
-                    <div class="memory-grid" id="memoryGrid"></div>
-                    <p id="emptyMessage" class="empty-message">
-                        Well... It feels light. Upload some files!
-                    </p>
-                </section>
-
-                <section class="section1 full-width ai-section">
-                    <div class="section-header">
-                        <h2>AI Recommendations</h2>
-                    </div>
-                    <div class="ai-grid" id="aiGrid"></div>
-                    <p class="empty-message visible">Coming soon.</p>
-                </section>
-
-                <section class="upload-section full-width">
-                    <div class="upload-box" id="dropZone">
-                        <div class="upload-icon">☁</div>
-                        <h3>Quick Upload</h3>
-                        <p>
-                            Drag & Drop screenshots here
-                            <br>
-                            or
-                        </p>
-                        <input type="file" id="fileInput" multiple hidden accept=".jpg,.jpeg,.png,.gif,.webp,.tiff,.tif,.bmp,.heic,.heif,.psd,.raw,.cr2,.nef,.arw,.dng,.rw2,.orf,.jp2,.j2k,.svg,.mp3,.wav,.m4a,.ogg,.oga,.flac,.aac,.opus,.wma,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv">
-                        <button type="button" onclick="document.getElementById('fileInput').click()">
-                            Browse Files
-                        </button>
-                    </div>
-                </section>
-
-            </section>
-
-            <!-- ===========================
-                 PAGE: MEMORIES
-            ============================ -->
-            <section class="page" data-page="memories" style="display:none;">
-                <h1 class="page-title">Memories</h1>
-                <p class="page-subtitle">Everything you've saved, all in one place.</p>
-
-                <section class="section1 full-width">
-                    <div class="memory-grid" id="allMemoriesGrid"></div>
-                    <p id="memoriesEmptyMessage" class="empty-message">
-                        No memories found. Try uploading something!
-                    </p>
-                </section>
-            </section>
-
-            <!-- ===========================
-                 PAGE: COLLECTIONS
-            ============================ -->
-            <section class="page" data-page="collections" style="display:none;">
-                <h1 class="page-title">Collections</h1>
-                <p class="page-subtitle">Your memories, grouped automatically by topic.</p>
-
-                <section class="section1 full-width">
-                    <div class="collections-grid" id="collectionsGrid"></div>
-                    <p id="collectionsEmptyMessage" class="empty-message">
-                        No collections yet. Upload a memory to get started!
-                    </p>
-                </section>
-            </section>
-
-            <!-- ===========================
-                 PAGE: IMAGES
-            ============================ -->
-            <section class="page" data-page="images" style="display:none;">
-                <h1 class="page-title">Images</h1>
-                <p class="page-subtitle">All the screenshots and photos you've saved.</p>
-
-                <section class="section1 full-width">
-                    <div class="memory-grid" id="imagesGrid"></div>
-                    <p id="imagesEmptyMessage" class="empty-message">
-                        No images yet.
-                    </p>
-                </section>
-            </section>
-
-            <!-- ===========================
-                 PAGE: AUDIO FILES
-            ============================ -->
-            <section class="page" data-page="audio" style="display:none;">
-                <h1 class="page-title">Audio Files</h1>
-                <p class="page-subtitle">Voice notes and recordings you've saved.</p>
-
-                <section class="section1 full-width">
-                    <div class="memory-grid" id="audioGrid"></div>
-                    <p id="audioEmptyMessage" class="empty-message">
-                        No audio files yet.
-                    </p>
-                </section>
-            </section>
-
-            <!-- ===========================
-                 PAGE: Other Documents
-            ============================ -->
-            <section class="page" data-page="document" style="display:none;">
-                <h1 class="page-title">Other Documents</h1>
-                <p class="page-subtitle">Documents you've saved for later.</p>
-
-                <section class="section1 full-width">
-                    <div class="memory-grid" id="docGrid"></div>
-                    <p id="docEmptyMessage" class="empty-message">
-                        No Documents yet.
-                    </p>
-                </section>
-            </section>
-
-            <!-- ===========================
-                 PAGE: TRASH
-            ============================ -->
-            <section class="page" data-page="trash" style="display:none;">
-                <h1 class="page-title">Trash</h1>
-                <p class="page-subtitle">Deleted memories are kept here until you remove them permanently.</p>
-
-                <section class="section1 full-width">
-                    <div class="memory-grid" id="trashGrid"></div>
-                    <p id="trashEmptyMessage" class="empty-message">
-                        Trash is empty.
-                    </p>
-                </section>
-            </section>
-
-            <footer>
-                <p>Recall &mdash; Remembers what you forgot.</p>
-            </footer>
-
-        </main>
-    </div>
 
     <!-- ===========================
-         IMAGE LIGHTBOX (click any image thumbnail to open)
+         NAV
     ============================ -->
-    <div id="imageLightbox" class="lightbox">
-        <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Close preview">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-        <img id="lightboxImg" src="" alt="Preview">
-    </div>
+    <header class="nav" id="nav">
+        <div class="nav-inner">
+            <a href="index.html" class="brand">
+                <i class="fa-solid fa-brain"></i>
+                <span>OrganAIz</span>
+            </a>
 
-    <script src="script.js"></script>
+            <nav class="nav-links" id="navLinks">
+                <a href="#features">Features</a>
+                <a href="#how-it-works">How it Works</a>
+                <a href="#about">About</a>
+                <a href="#team">Team</a>
+                <a href="#contact">Contact</a>
+            </nav>
+
+            <div class="nav-actions">
+                <button id="themeToggle" class="icon-btn" type="button" title="Toggle dark mode">
+                    <i class="fa-regular fa-moon"></i>
+                </button>
+                <a href="dashboard.html" class="btn btn-ghost">Log In</a>
+                <a href="dashboard.html" class="btn btn-primary">Sign Up Free</a>
+                <button class="nav-burger" id="navBurger" type="button" aria-label="Open menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- ===========================
+             HERO
+        ============================ -->
+        <section class="hero-section">
+            <div class="hero-blob blob-a" aria-hidden="true"></div>
+            <div class="hero-blob blob-b" aria-hidden="true"></div>
+
+            <div class="hero-inner">
+                <div class="hero-copy reveal">
+                    <span class="eyebrow"><i class="fa-solid fa-sparkles"></i> AI-powered memory organizer</span>
+                    <h1>Everything you save.<br>Nothing you lose.</h1>
+                    <p class="hero-quote">Say goodbye to your average gallery, and say hello to OrganAIz.</p>
+                    <p class="hero-sub">
+                        Screenshots, voice notes, PDFs, receipts, half-finished thoughts — OrganAIz reads
+                        what you capture, tags it, sorts it into collections, and hands it back the moment
+                        you go looking. No folders to build. No memory required.
+                    </p>
+                    <div class="hero-ctas">
+                        <a href="dashboard.html" class="btn btn-primary btn-lg">
+                            Get Started Free <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                        <a href="#how-it-works" class="btn btn-outline btn-lg">
+                            <i class="fa-solid fa-circle-play"></i> See how it works
+                        </a>
+                    </div>
+                    <div class="hero-tags">
+                        <span><i class="fa-solid fa-check"></i> No credit card</span>
+                        <span><i class="fa-solid fa-check"></i> Free to start</span>
+                        <span><i class="fa-solid fa-check"></i> Your data, deletable anytime</span>
+                    </div>
+                </div>
+
+                <!-- SIGNATURE VISUAL: scattered captures settle into organized collections -->
+                <div class="hero-visual reveal" aria-hidden="true">
+                    <div class="scatter-field" id="scatterField">
+                        <div class="chip chip-1"><i class="fa-regular fa-image"></i></div>
+                        <div class="chip chip-2"><i class="fa-solid fa-microphone"></i></div>
+                        <div class="chip chip-3"><i class="fa-regular fa-file-pdf"></i></div>
+                        <div class="chip chip-4"><i class="fa-regular fa-image"></i></div>
+                        <div class="chip chip-5"><i class="fa-solid fa-note-sticky"></i></div>
+                        <div class="chip chip-6"><i class="fa-regular fa-file"></i></div>
+                    </div>
+                    <div class="collections-preview">
+                        <div class="mini-collection">
+                            <div class="mini-head"><i class="fa-solid fa-graduation-cap"></i> Study</div>
+                            <div class="mini-row"></div>
+                            <div class="mini-row short"></div>
+                        </div>
+                        <div class="mini-collection">
+                            <div class="mini-head"><i class="fa-solid fa-cart-shopping"></i> Shopping</div>
+                            <div class="mini-row"></div>
+                            <div class="mini-row short"></div>
+                        </div>
+                        <div class="mini-collection">
+                            <div class="mini-head"><i class="fa-solid fa-plane"></i> Travel</div>
+                            <div class="mini-row"></div>
+                            <div class="mini-row short"></div>
+                        </div>
+                        <div class="mini-collection">
+                            <div class="mini-head"><i class="fa-solid fa-code"></i> Work</div>
+                            <div class="mini-row"></div>
+                            <div class="mini-row short"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===========================
+             USE-CASE STRIP
+        ============================ -->
+        <section class="strip reveal">
+            <p class="strip-label">Built for whatever you throw at it</p>
+            <div class="strip-icons">
+                <span><i class="fa-regular fa-image"></i> Screenshots</span>
+                <span><i class="fa-solid fa-microphone"></i> Voice Notes</span>
+                <span><i class="fa-regular fa-file-pdf"></i> PDFs</span>
+                <span><i class="fa-solid fa-receipt"></i> Receipts</span>
+                <span><i class="fa-solid fa-graduation-cap"></i> Study Notes</span>
+                <span><i class="fa-solid fa-lightbulb"></i> Random Ideas</span>
+            </div>
+        </section>
+
+        <!-- ===========================
+             FEATURES
+        ============================ -->
+        <section class="section" id="features">
+            <div class="section-inner">
+                <span class="eyebrow center reveal"><i class="fa-solid fa-layer-group"></i> Features</span>
+                <h2 class="section-title reveal">Organizing happens automatically.<br>You just capture.</h2>
+
+                <div class="feature-grid">
+                    <div class="feature-card reveal">
+                        <div class="feature-icon icon-violet"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                        <h3>Smart Capture &amp; Tagging</h3>
+                        <p>Drop in a screenshot or file and OrganAIz's AI reads it, writes a title and summary,
+                            and tags it — so you never have to name a file again.</p>
+                    </div>
+
+                    <div class="feature-card reveal">
+                        <div class="feature-icon icon-amber"><i class="fa-solid fa-folder-tree"></i></div>
+                        <h3>Auto Collections</h3>
+                        <p>Related memories group themselves into collections by topic, so "that shopping list"
+                            and "that hackathon deadline" each end up exactly where you'd look for them.</p>
+                    </div>
+
+                    <div class="feature-card reveal">
+                        <div class="feature-icon icon-violet"><i class="fa-solid fa-magnifying-glass"></i></div>
+                        <h3>Instant Recall Search</h3>
+                        <p>Search in plain language — "the hackathon deadline," "that receipt from last week" —
+                            and get the right memory back immediately.</p>
+                    </div>
+
+                    <div class="feature-card reveal">
+                        <div class="feature-icon icon-amber"><i class="fa-solid fa-trash-can-arrow-up"></i></div>
+                        <h3>Trash &amp; Restore</h3>
+                        <p>Delete with confidence. Everything sits safely in Trash until you restore it or
+                            clear it for good — nothing disappears by accident.</p>
+                    </div>
+
+                    <div class="feature-card reveal">
+                        <div class="feature-icon icon-violet"><i class="fa-solid fa-file-shield"></i></div>
+                        <h3>Every Format Welcome</h3>
+                        <p>Images, voice recordings, PDFs, and documents all live in one place, each with its
+                            own dedicated view when you need to browse just one type.</p>
+                    </div>
+
+                    <div class="feature-card reveal">
+                        <div class="feature-icon icon-amber"><i class="fa-solid fa-moon"></i></div>
+                        <h3>Eye-Friendly Dark Mode</h3>
+                        <p>A genuinely muted dark theme, not just inverted colors — easy on the eyes for
+                            late-night capturing, and it remembers your choice everywhere.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===========================
+             COMPARISON
+        ============================ -->
+        <section class="section" id="comparison">
+            <div class="section-inner">
+                <span class="eyebrow center reveal"><i class="fa-solid fa-scale-balanced"></i> Comparison</span>
+                <h2 class="section-title reveal">OrganAIz vs. Your Regular Gallery</h2>
+
+                <div class="compare-table reveal">
+                    <div class="compare-row compare-head">
+                        <div class="compare-cell compare-feature"><i class="fa-solid fa-list-check"></i> Features</div>
+                        <div class="compare-cell compare-organaiz"><i class="fa-solid fa-brain"></i> OrganAIz</div>
+                        <div class="compare-cell compare-gallery"><i class="fa-regular fa-image"></i> Your Gallery</div>
+                    </div>
+
+                    <div class="compare-row">
+                        <div class="compare-cell compare-feature"><i class="fa-solid fa-microchip"></i> Integrated AI</div>
+                        <div class="compare-cell compare-organaiz"><i class="fa-solid fa-circle-check"></i> Integrated AI</div>
+                        <div class="compare-cell compare-gallery"><i class="fa-solid fa-circle-xmark"></i> No integrated AI</div>
+                    </div>
+                    <div class="compare-row">
+                        <div class="compare-cell compare-feature"><i class="fa-solid fa-star"></i> Smart recommendations</div>
+                        <div class="compare-cell compare-organaiz"><i class="fa-solid fa-circle-check"></i> Smart recommendations</div>
+                        <div class="compare-cell compare-gallery"><i class="fa-solid fa-circle-xmark"></i> Less smart recommendations</div>
+                    </div>
+                    <div class="compare-row">
+                        <div class="compare-cell compare-feature"><i class="fa-solid fa-file-lines"></i> Preserves the context</div>
+                        <div class="compare-cell compare-organaiz"><i class="fa-solid fa-circle-check"></i> Preserves the context</div>
+                        <div class="compare-cell compare-gallery"><i class="fa-solid fa-circle-xmark"></i> Only preserves the image/file</div>
+                    </div>
+                    <div class="compare-row">
+                        <div class="compare-cell compare-feature"><i class="fa-solid fa-font"></i> Generates a human-readable title</div>
+                        <div class="compare-cell compare-organaiz"><i class="fa-solid fa-circle-check"></i> Generates a human-readable title</div>
+                        <div class="compare-cell compare-gallery"><i class="fa-solid fa-circle-xmark"></i> No readable title, e.g. 1341_screenshot(3).jpg</div>
+                    </div>
+                    <div class="compare-row">
+                        <div class="compare-cell compare-feature"><i class="fa-solid fa-magnifying-glass"></i> Smart and easy search</div>
+                        <div class="compare-cell compare-organaiz"><i class="fa-solid fa-circle-check"></i> Smart and easy search</div>
+                        <div class="compare-cell compare-gallery"><i class="fa-solid fa-circle-xmark"></i> No smart search, needs a file name</div>
+                    </div>
+                    <div class="compare-row">
+                        <div class="compare-cell compare-feature"><i class="fa-solid fa-file-lines"></i> Generates a quick summary</div>
+                        <div class="compare-cell compare-organaiz"><i class="fa-solid fa-circle-check"></i> Generates a quick summary</div>
+                        <div class="compare-cell compare-gallery"><i class="fa-solid fa-circle-xmark"></i> No summary, only the image/file</div>
+                    </div>
+                    <div class="compare-row">
+                        <div class="compare-cell compare-feature"><i class="fa-solid fa-photo-film"></i> Supports audio, image, PDFs, notes, docs &amp; videos <em>(planned)</em></div>
+                        <div class="compare-cell compare-organaiz"><i class="fa-solid fa-circle-check"></i> Supports audio, image, PDFs, notes, docs &amp; videos <em>(planned)</em></div>
+                        <div class="compare-cell compare-gallery"><i class="fa-solid fa-circle-xmark"></i> Supports only images and video types</div>
+                    </div>
+                    <div class="compare-row">
+                        <div class="compare-cell compare-feature"><i class="fa-solid fa-folder"></i> Automatic collection making</div>
+                        <div class="compare-cell compare-organaiz"><i class="fa-solid fa-circle-check"></i> Automatic collection making</div>
+                        <div class="compare-cell compare-gallery"><i class="fa-solid fa-circle-minus semi"></i> Semi-automatic collection making</div>
+                    </div>
+                    <div class="compare-row">
+                        <div class="compare-cell compare-feature"><i class="fa-solid fa-calendar-days"></i> Reminds of dates/deadlines from files</div>
+                        <div class="compare-cell compare-organaiz"><i class="fa-solid fa-circle-check"></i> Reminds of dates/deadlines from files</div>
+                        <div class="compare-cell compare-gallery"><i class="fa-solid fa-circle-xmark"></i> No understanding of content — no reminders</div>
+                    </div>
+                    <div class="compare-row">
+                        <div class="compare-cell compare-feature"><i class="fa-solid fa-link"></i> Links related files/images/PDFs/docs by topic</div>
+                        <div class="compare-cell compare-organaiz"><i class="fa-solid fa-circle-check"></i> Links related files/images/PDFs/docs by topic</div>
+                        <div class="compare-cell compare-gallery"><i class="fa-solid fa-circle-xmark"></i> No linking</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===========================
+             HOW IT WORKS
+        ============================ -->
+        <section class="section alt" id="how-it-works">
+            <div class="section-inner">
+                <span class="eyebrow center reveal"><i class="fa-solid fa-diagram-project"></i> How it works</span>
+                <h2 class="section-title reveal">Three steps. That's the whole system.</h2>
+
+                <div class="steps">
+                    <div class="step reveal">
+                        <div class="step-num">01</div>
+                        <div class="step-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                        <h3>Drop it in</h3>
+                        <p>Drag a screenshot, upload a voice note, or save a PDF. Takes about two seconds.</p>
+                    </div>
+                    <div class="step-connector" aria-hidden="true"></div>
+                    <div class="step reveal">
+                        <div class="step-num">02</div>
+                        <div class="step-icon"><i class="fa-solid fa-brain"></i></div>
+                        <h3>AI reads &amp; organizes</h3>
+                        <p>OrganAIz's AI understands the content, writes a summary, tags it, and files it into
+                            the right collection — no input needed from you.</p>
+                    </div>
+                    <div class="step-connector" aria-hidden="true"></div>
+                    <div class="step reveal">
+                        <div class="step-num">03</div>
+                        <div class="step-icon"><i class="fa-solid fa-bolt"></i></div>
+                        <h3>Recall instantly</h3>
+                        <p>Search for it, browse its collection, or find it on your dashboard — whichever's
+                            faster in the moment.</p>
+                    </div>
+                </div>
+
+                <!-- Product preview mockup -->
+                <div class="preview-frame reveal">
+                    <div class="preview-chrome">
+                        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+                        <span class="preview-url"><i class="fa-solid fa-lock"></i> app.organaiz.io/dashboard</span>
+                    </div>
+                    <div class="preview-body">
+                        <div class="preview-card">
+                            <div class="preview-thumb thumb-violet"><i class="fa-regular fa-image"></i></div>
+                            <span class="preview-tag">Hackathon</span>
+                            <h4>Submission deadline screenshot</h4>
+                            <p>Auto-tagged from a calendar app screenshot.</p>
+                        </div>
+                        <div class="preview-card">
+                            <div class="preview-thumb thumb-amber"><i class="fa-solid fa-microphone"></i></div>
+                            <span class="preview-tag">Ideas</span>
+                            <h4>Voice memo — app idea</h4>
+                            <p>Transcribed and summarized automatically.</p>
+                        </div>
+                        <div class="preview-card">
+                            <div class="preview-thumb thumb-violet"><i class="fa-regular fa-file-pdf"></i></div>
+                            <span class="preview-tag">Study</span>
+                            <h4>Semester notes.pdf</h4>
+                            <p>Filed under Study without you lifting a finger.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===========================
+             ABOUT
+        ============================ -->
+        <section class="section" id="about">
+            <div class="section-inner about-grid">
+                <div class="reveal">
+                    <span class="eyebrow"><i class="fa-solid fa-circle-info"></i> About</span>
+                    <h2 class="section-title left">Why we built OrganAIz</h2>
+                    <p class="about-copy">
+                        We take a screenshot, save a voice note, or download a PDF a dozen times a day —
+                        and lose track of most of it within the hour. OrganAIz exists because organizing
+                        that mess shouldn't be another chore on your list. It should just happen, quietly,
+                        in the background, so the only thing left for you to do is remember that you
+                        saved something — OrganAIz handles the rest.
+                    </p>
+                    <p class="about-copy">
+                        We're a small team obsessed with making "where did I save that?" a question you
+                        never have to ask again.
+                    </p>
+                </div>
+
+                <div class="team-card reveal">
+                    <div class="team-badge"><i class="fa-solid fa-code"></i></div>
+                    <h3>Built by Code Catalyst</h3>
+                    <p>OrganAIz is designed and developed by <strong>Code Catalyst</strong>, a small team
+                        building focused, AI-native tools for everyday information overload.</p>
+                    <a href="#contact" class="btn btn-outline btn-sm">Get in touch <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===========================
+             TEAM
+        ============================ -->
+        <section class="section alt" id="team">
+            <div class="section-inner">
+                <span class="eyebrow center reveal"><i class="fa-solid fa-users"></i> The Team</span>
+                <h2 class="section-title reveal">Meet Code Catalyst</h2>
+
+                <div class="team-grid">
+                    <div class="member-card reveal">
+                        <div class="member-avatar avatar-a">
+                            <svg viewBox="0 0 100 100" aria-hidden="true">
+                                <circle cx="50" cy="38" r="20"/>
+                                <path d="M14 92c0-22 16-34 36-34s36 12 36 34" />
+                                <path d="M32 26c4-10 32-10 36 2 2 6-2 9-2 9s2-13-8-15c-8-2-14 4-20 4-4 0-6-2-6 0Z" class="hair"/>
+                            </svg>
+                        </div>
+                        <h3>Shruti Sharma</h3>
+                        <span class="member-role">Founder &amp; Lead Frontend Developer</span>
+                        <p class="member-loc"><i class="fa-solid fa-location-dot"></i> Delhi, India</p>
+                        <p class="member-bio">Pre-first-year student planning to join IGNOU for BCA. Passionate
+                            about coding and development — currently building the frontend, wiring it up to the
+                            backend, and keeping the whole app responsive and running smoothly.</p>
+                        <div class="member-socials">
+                            <a href="https://github.com/Reddys-woman/" target="_blank" rel="noopener" aria-label="Shruti's GitHub"><i class="fa-brands fa-github"></i></a>
+                            <a href="https://www.linkedin.com/in/shruti-sharma-8889132a3/" target="_blank" rel="noopener" aria-label="Shruti's LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+                        </div>
+                    </div>
+
+                    <div class="member-card reveal">
+                        <div class="member-avatar avatar-b">
+                            <svg viewBox="0 0 100 100" aria-hidden="true">
+                                <circle cx="50" cy="38" r="20"/>
+                                <path d="M14 92c0-22 16-34 36-34s36 12 36 34" />
+                                <path d="M28 32c2-14 40-14 42 0 1 6-3 8-3 8s1-10-6-13c-9-4-11 6-24 6-6 0-9-3-9-1Z" class="hair"/>
+                            </svg>
+                        </div>
+                        <h3>Yamini Gupta</h3>
+                        <span class="member-role">Founder &amp; Lead Backend Developer</span>
+                        <p class="member-loc"><i class="fa-solid fa-location-dot"></i> Karnataka, India</p>
+                        <p class="member-bio">Pre-first-year student working as the team's backend developer.
+                            Enjoys building the logic that powers applications and solving technical problems.</p>
+                        <div class="member-socials">
+                            <a href="https://github.com/NeuralWhirl" target="_blank" rel="noopener" aria-label="Yamini's GitHub"><i class="fa-brands fa-github"></i></a>
+                            <a href="https://www.linkedin.com/in/yamini-gupta-6a9077373/" target="_blank" rel="noopener" aria-label="Yamini's LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+                        </div>
+                    </div>
+
+                    <div class="member-card reveal">
+                        <div class="member-avatar avatar-c">
+                            <svg viewBox="0 0 100 100" aria-hidden="true">
+                                <circle cx="50" cy="38" r="20"/>
+                                <path d="M14 92c0-22 16-34 36-34s36 12 36 34" />
+                                <path d="M30 24c6-8 34-8 38 4 2 6-1 12-1 12s-2-11-10-13c-8-2-10 5-18 5-5 0-11-4-9-8Z" class="hair"/>
+                            </svg>
+                        </div>
+                        <h3>Prakamya Pandey</h3>
+                        <span class="member-role">Social Media Manager</span>
+                        <p class="member-loc"><i class="fa-solid fa-location-dot"></i> India</p>
+                        <p class="member-bio">Pre-first-year student managing social media and presentations for
+                            the team. Loves graphics and editing, is always ready to learn something new, and is
+                            an aspiring software engineer who loves to create and develop.</p>
+                        <div class="member-socials">
+                            <a href="https://github.com/prakamyapandey7178-hash" target="_blank" rel="noopener" aria-label="Prakamya's GitHub"><i class="fa-brands fa-github"></i></a>
+                            <a href="https://www.linkedin.com/in/prakamya-pandey-a7148a412" target="_blank" rel="noopener" aria-label="Prakamya's LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===========================
+             CTA BANNER
+        ============================ -->
+        <section class="cta-banner reveal">
+            <div class="cta-inner">
+                <h2>Ready to stop losing track of things?</h2>
+                <p>Start capturing for free — no credit card, no setup, no folders to name.</p>
+                <a href="dashboard.html" class="btn btn-light btn-lg">
+                    Create your free account <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+        </section>
+
+        <!-- ===========================
+             CONTACT
+        ============================ -->
+        <section class="section" id="contact">
+            <div class="section-inner contact-grid">
+                <div class="reveal">
+                    <span class="eyebrow"><i class="fa-solid fa-envelope"></i> Contact</span>
+                    <h2 class="section-title left">Talk to us</h2>
+                    <p class="about-copy">Questions, feedback, or a bug you want to flag? We read everything.</p>
+
+                    <div class="contact-info">
+                        <div class="contact-row">
+                            <i class="fa-solid fa-envelope"></i>
+                            <div>
+                                <strong>Email</strong>
+                                <p>support@organaiz.app</p>
+                            </div>
+                        </div>
+                        <div class="contact-row">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <div>
+                                <strong>Headquarters</strong>
+                                <p>India</p>
+                            </div>
+                        </div>
+                        <div class="contact-row">
+                            <i class="fa-solid fa-clock"></i>
+                            <div>
+                                <strong>Response time</strong>
+                                <p>Usually within 3–4 working days</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="social-row">
+                        <a href="https://www.instagram.com/.codecatalyst./" target="_blank" rel="noopener" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="https://discord.gg/9MyDmCs7Mv" target="_blank" rel="noopener" aria-label="Discord"><i class="fa-brands fa-discord"></i></a>
+                        <a href="https://github.com/Reddys-woman/" target="_blank" rel="noopener" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+                    </div>
+                </div>
+
+                <form class="contact-form reveal" id="contactForm">
+                    <label>
+                        Name
+                        <input type="text" name="name" placeholder="Your name" required>
+                    </label>
+                    <label>
+                        Email
+                        <input type="email" name="email" placeholder="you@example.com" required>
+                    </label>
+                    <label>
+                        Message
+                        <textarea name="message" rows="4" placeholder="How can we help?" required></textarea>
+                    </label>
+                    <button type="submit" class="btn btn-primary btn-lg full">
+                        Send Message <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                    <p class="form-note" id="formNote"></p>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===========================
+         FOOTER
+    ============================ -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <a href="index.html" class="brand">
+                    <i class="fa-solid fa-brain"></i>
+                    <span>OrganAIz</span>
+                </a>
+                <p>Capture everything. Forget nothing.</p>
+                <div class="social-row">
+                    <a href="https://www.instagram.com/.codecatalyst./" target="_blank" rel="noopener" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="https://discord.gg/9MyDmCs7Mv" target="_blank" rel="noopener" aria-label="Discord"><i class="fa-brands fa-discord"></i></a>
+                    <a href="https://github.com/Reddys-woman/" target="_blank" rel="noopener" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>Product</h4>
+                <a href="#features">Features</a>
+                <a href="#how-it-works">How it Works</a>
+                <a href="dashboard.html">Dashboard</a>
+            </div>
+
+            <div class="footer-col">
+                <h4>Company</h4>
+                <a href="#about">About</a>
+                <a href="#team">Team</a>
+                <a href="#contact">Contact</a>
+            </div>
+
+            <div class="footer-col">
+                <h4>Legal</h4>
+                <a href="terms.html">Terms &amp; Conditions</a>
+                <a href="privacy.html">Privacy Policy</a>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; <span id="year"></span> Code Catalyst. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="landing.js"></script>
 </body>
 
 </html>
