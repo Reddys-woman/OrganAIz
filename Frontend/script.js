@@ -44,6 +44,7 @@ let trashedMemories = []; // trashed memories
 let pollingInterval = null;
 let currentPage = "dashboard";
 let collectionFilter = null; // set when jumping from Collections -> Memories
+let idFilter = null;
 
 /* =========================================================
    PAGE ROUTER
@@ -86,6 +87,7 @@ navLinks.forEach(link => {
     link.addEventListener("click", function (e) {
         e.preventDefault();
         collectionFilter = null;
+        idFilter = null;
         showPage(link.dataset.page);
     });
 });
@@ -93,6 +95,7 @@ navLinks.forEach(link => {
 sourceLinks.forEach(link => {
     link.addEventListener("click", function () {
         collectionFilter = null;
+        idFilter = null;
         showPage(link.dataset.page);
     });
 });
@@ -308,9 +311,10 @@ function renderDashboard() {
 ========================================================= */
 function renderMemoriesPage() {
     const query = searchInput.value.trim().toLowerCase();
-
     let filtered = memories.filter(Boolean);
-    if (collectionFilter) {
+    if (idFilter) {
+        filtered = filtered.filter(m => idFilter.includes(m.id));
+    } else if (collectionFilter) {
         filtered = filtered.filter(m => m.collection === collectionFilter);
     }
     filtered = filtered.filter(m => memoryMatchesQuery(m, query));
@@ -472,6 +476,27 @@ document.addEventListener("click", async function (e) {
     const trashBtn = e.target.closest(".trash-icon-btn");
     const restoreBtn = e.target.closest(".restore-btn");
     const deleteBtn = e.target.closest(".delete-btn");
+    const pageLinkBtn = e.target.closest("[data-page-link]");
+    const reviewDupBtn = e.target.closest(".review-duplicate-btn");
+    const viewDeadlineBtn = e.target.closest(".view-deadline-btn");
+
+    if (reviewDupBtn) {
+        idFilter = reviewDupBtn.dataset.ids.split(",").map(id => parseInt(id));
+        collectionFilter = null;
+        showPage("memories");
+    }
+
+    if (viewDeadlineBtn) {
+        idFilter = [parseInt(viewDeadlineBtn.dataset.id)];
+        collectionFilter = null;
+        showPage("memories");
+    }
+
+     if (pageLinkBtn) {
+        e.preventDefault();
+        idFilter = null;
+        showPage(pageLinkBtn.dataset.pageLink);
+    }
 
     if (trashBtn) {
         const id = trashBtn.dataset.id;
@@ -486,6 +511,7 @@ document.addEventListener("click", async function (e) {
             alert("Couldn't move that memory to trash. Is the backend running?");
         }
     }
+
 
     if (restoreBtn) {
         const id = restoreBtn.dataset.id;
@@ -546,7 +572,7 @@ async function renderAIRecommendations() {
                 <div class="ai-icon">📄</div>
                 <h3>Possible Duplicates</h3>
                 <p>"${group[0].title}" and "${group[1].title}" look similar. Review them?</p>
-                <button data-page-link="memories">Review</button>
+                <button class="review-duplicate-btn" data-ids="${group[0].id},${group[1].id}">Review</button>
             `;
             aiGrid.appendChild(card);
         });
@@ -561,7 +587,7 @@ async function renderAIRecommendations() {
                 <div class="ai-icon">⏰</div>
                 <h3>Deadline ${dayText}</h3>
                 <p>"${memory.title}" has a deadline on ${memory.deadline}.</p>
-                <button data-page-link="memories">View</button>
+                <button class="view-deadline-btn" data-id="${memory.id}">View</button>
             `;
             aiGrid.appendChild(card);
         });
