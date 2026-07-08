@@ -2,6 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
 const { analyzeImage } = require("./gemini");
+const user_id = req.body.user_id;
 const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory, searchMemories, findDuplicates, getUpcomingDeadlines, getCollectionSuggestions } = require("./supabase");
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -42,6 +43,7 @@ app.post("/upload", upload.single("image"), async (req, res) => {
 
     try {
         const placeholderMemory = await saveMemory({
+            user_id,
             filename: req.file.filename,
             title: "Processing...",
             summary: "AI analysis in progress",
