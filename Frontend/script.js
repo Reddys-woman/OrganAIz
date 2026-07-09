@@ -294,7 +294,12 @@ function memoryMatchesQuery(memory, query) {
    DASHBOARD (recent memories, stats)
 ========================================================= */
 function renderDashboard() {
-    const recent = memories.filter(Boolean).slice(0, 4);
+    const query = searchInput.value.trim().toLowerCase();
+
+    const recent = memories
+        .filter(Boolean)
+        .filter(m => memoryMatchesQuery(m, query))
+        .slice(0, 4);
 
     memoryGrid.innerHTML = "";
     recent.forEach(memory => {
@@ -331,6 +336,9 @@ function renderDashboard() {
    MEMORIES PAGE (all memories, filterable by search / collection)
 ========================================================= */
 function renderMemoriesPage() {
+    console.log("Search:", searchInput.value);
+    console.log("Total memories:", memories.length);
+
     const query = searchInput.value.trim().toLowerCase();
     let filtered = memories.filter(Boolean);
     if (idFilter) {
@@ -339,6 +347,7 @@ function renderMemoriesPage() {
         filtered = filtered.filter(m => m.collection === collectionFilter);
     }
     filtered = filtered.filter(m => memoryMatchesQuery(m, query));
+    console.log("Filtered:", filtered);
 
     allMemoriesGrid.innerHTML = "";
     filtered.forEach(memory => {
