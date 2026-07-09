@@ -4,24 +4,85 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const PROMPT = `You are analyzing a screenshot for a memory-organizing app called OrganAIz.
+const PROMPT = `You are the AI assistant for OrganAIz, a smart memory-organizing application.
 
-Look at the image and respond with ONLY a valid JSON object in this exact format, with no extra text, no explanations, and no markdown formatting:
+The uploaded file may be:
+- an image or screenshot
+- a PDF document
+- a voice recording
+- another supported file
+
+Your job is to understand the content of the uploaded file and generate useful metadata so the user can easily search, organize, and recall it later.
+
+Respond with ONLY a valid JSON object in this exact format:
 
 {
-  "title": "A short, specific title (max 8 words)",
-  "summary": "A 1-2 sentence summary of what this screenshot contains",
+  "title": "A concise descriptive title (maximum 8 words)",
+  "summary": "A clear 1-2 sentence summary of the important information in the file",
   "tags": ["tag1", "tag2", "tag3"],
-  "collection": "A short 1-2 word category name that best fits this content (e.g. Hackathon, Study, Shopping, Design, Travel, Recipes, Finance, etc.)",
-  "deadline": "If this screenshot mentions a specific date, due date, or deadline, return it in YYYY-MM-DD format. If no date is mentioned, return null (not the string 'null', an actual null value)."
+  "collection": "A short category name (1-2 words)",
+  "deadline": "Return a date in YYYY-MM-DD format if the file contains a specific due date, event date, meeting date, appointment, exam date, or submission deadline. Otherwise return null."
 }
 
-Rules:
-- title must be specific to the content, not generic like "Screenshot" or "Image"
-- tags should be 2-4 relevant single or two-word keywords
-- collection should be a concise, sensible category based on the actual content — invent one if none of the examples fit
-- deadline should only be filled in if an actual date is clearly mentioned or stated in the image (e.g. "Due: July 15", "Submit by 12/03/2026"). If the image mentions a relative time like "in 2 days" without a specific date, do your best to leave it as null unless a clear absolute date is present.
-- Return ONLY the JSON object, nothing else`;
+Guidelines:
+
+Title:
+- Make it descriptive and specific.
+- Never use generic titles like "Image", "Screenshot", "PDF", "Audio", or "Document".
+
+Summary:
+- Capture the most important information.
+- If it's a voice recording, summarize what was said.
+- If it's a PDF, summarize the document.
+- If it's an image, describe the important visual information.
+
+Tags:
+- Return 3-5 highly relevant keywords.
+- Prefer nouns over adjectives.
+- Keep tags short (1-2 words each).
+
+Collection:
+Choose the single best collection that groups similar memories together.
+
+Examples include:
+- College
+- Assignments
+- Receipts
+- Finance
+- Travel
+- Recipes
+- Shopping
+- Meetings
+- Internship
+- Design
+- Research
+- Health
+- Personal
+- Work
+- Events
+
+If none fit well, create a concise collection name.
+
+Deadlines:
+Extract dates only when they represent an actionable event such as:
+- assignment due dates
+- exams
+- interviews
+- appointments
+- meetings
+- registrations
+- bill due dates
+- reminders
+
+Convert dates into YYYY-MM-DD whenever possible.
+
+If no explicit actionable date exists, return null.
+
+Important:
+- Do not invent information.
+- Do not guess unreadable text.
+- Return ONLY valid JSON.
+- Do not wrap the response in markdown.`;
 
 function imageToBase64(filePath) {
   const fileBuffer = fs.readFileSync(filePath);
@@ -29,13 +90,40 @@ function imageToBase64(filePath) {
 }
 
 function getMimeType(filePath) {
-  if (filePath.endsWith(".png")) return "image/png";
-  if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) return "image/jpeg";
-  if (filePath.endsWith(".webp")) return "image/webp";
-  return "image/jpeg";
+  const ext = filePath.split(".").pop().toLowerCase();
+
+  switch (ext) {
+    case "png":
+      return "image/png";
+
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+
+    case "webp":
+      return "image/webp";
+
+    case "pdf":
+      return "application/pdf";
+
+    case "mp3":
+      return "audio/mpeg";
+
+    case "wav":
+      return "audio/wav";
+
+    case "m4a":
+      return "audio/mp4";
+
+    case "ogg":
+      return "audio/ogg";
+
+    default:
+      throw new Error("Unsupported file type");
+  }
 }
 
-async function analyzeImage(filePath, retries = 2) {
+async function analyzeFile(filePath, retries = 2) {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const imageBase64 = imageToBase64(filePath);
@@ -63,4 +151,4 @@ async function analyzeImage(filePath, retries = 2) {
   }
 }
 
-module.exports = { analyzeImage };  
+module.exports = { analyzeFile };  

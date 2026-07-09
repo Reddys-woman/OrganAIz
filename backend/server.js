@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
-const { analyzeImage } = require("./gemini");
+const { analyzeFile } = require("./gemini");
 const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory, searchMemories, findDuplicates, getUpcomingDeadlines, getCollectionSuggestions } = require("./supabase");
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -14,7 +14,32 @@ const storage = multer.diskStorage({
 
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+    storage,
+    fileFilter(req, file, cb) {
+
+        console.log("Uploaded MIME:", file.mimetype);
+
+        const allowed = [
+            "image/png",
+            "image/jpeg",
+            "image/webp",
+            "application/pdf",
+            "audio/mpeg",
+            "audio/wav",
+            "audio/mp4",
+            "audio/x-m4a",
+            "audio/m4a",
+            "video/mp4"
+        ];
+    
+
+        if (allowed.includes(file.mimetype))
+            cb(null, true);
+        else
+            cb(new Error("Unsupported file type"));
+    }
+});
 
 const app = express();
 
@@ -100,7 +125,7 @@ app.post("/upload", upload.single("image"), async (req, res) => {
         });
 
         const filePath = "uploads/" + req.file.filename;
-        analyzeImage(filePath)
+        analyzeFile(filePath)
             .then(async (analysis) => {
                 await updateMemory(
                     placeholderMemory.id,
@@ -129,13 +154,16 @@ app.post("/upload", upload.single("image"), async (req, res) => {
 });
 
 app.get("/memories", async (req, res) => {
-    try {
-        const memories = await getAllMemories(req.user.id);
-        res.json({ success: true, memories });
-    } catch (error) {
-        console.error("Failed to fetch memories:", error.message);
-        res.status(500).json({ success: false, error: "Failed to fetch memories" });
-    }
+    console.log("Logged in user:", req.user.id);
+
+    const memories = await getAllMemories(req.user.id);
+
+    console.log("Returned memories:", memories);
+
+    res.json({
+        success: true,
+        memories
+    });
 });
 
 app.patch("/memories/:id/trash", async (req, res) => {

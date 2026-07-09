@@ -26,6 +26,10 @@ const uploadBtn = document.getElementById("uploadBtn");
 const fileInput = document.getElementById("fileInput");
 const dropZone = document.getElementById("dropZone");
 const searchInput = document.getElementById("searchInput");
+console.log(searchInput);
+searchInput.addEventListener("input", () => {
+    refreshCurrentPage();
+});
 const themeToggle = document.getElementById("themeToggle");
 
 const memoryGrid = document.getElementById("memoryGrid");           // Dashboard: recent
@@ -794,6 +798,32 @@ imageLightbox.addEventListener("click", function (e) {
 });
 document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") closeLightbox();
+});
+
+searchInput.addEventListener("input", () => {
+    switch (currentPage) {
+        case "dashboard":
+            renderDashboard();
+            break;
+        case "memories":
+            renderMemoriesPage();
+            break;
+        case "collections":
+            renderCollectionsPage();
+            break;
+        case "images":
+            renderImagesPage();
+            break;
+        case "audio":
+            renderAudioPage();
+            break;
+        case "document":
+            renderdocPage();
+            break;
+        case "trash":
+            renderTrashPage();
+            break;
+    }
 });
 
 /* =========================================================

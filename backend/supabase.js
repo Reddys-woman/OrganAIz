@@ -27,9 +27,7 @@ async function getAllMemories(userId) {
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) throw new Error(error.message);
 
   return data;
 }
@@ -117,7 +115,7 @@ async function permanentlyDeleteMemory(id, userId) {
     .from("memories")
     .delete()
     .eq("id", id)
-    .eq("user_Id", userId);
+    .eq("user_id", userId);
 
   if (error) {
     throw new Error(error.message);
@@ -182,30 +180,39 @@ async function getUpcomingDeadlines(userId) {
 async function getCollectionSuggestions(userId) {
   const memories = await getAllMemories(userId);
 
-  const tagToUngroupedMemories = {};
-
-  memories.forEach(memory => {
-    (memory.tags || []).forEach(tag => {
-      if (memory.collection !== tag) {
-        if (!tagToUngroupedMemories[tag]) tagToUngroupedMemories[tag] = [];
-        tagToUngroupedMemories[tag].push(memory);
-      }
-    });
-  });
-
   const suggestions = [];
-  for (const tag in tagToUngroupedMemories) {
-    const matchingMemories = tagToUngroupedMemories[tag];
-    if (matchingMemories.length >= 2) {
+  const processedPairs = new Set();
+
+  for (let i = 0; i < memories.length; i++) {
+    for (let j = i + 1; j < memories.length; j++) {
+
+      const memoryA = memories[i];
+      const memoryB = memories[j];
+
+      // Skip if already in same collection
+      if (memoryA.collection === memoryB.collection) continue;
+
+      const tagsA = memoryA.tags || [];
+      const tagsB = memoryB.tags || [];
+
+      const sharedTags = tagsA.filter(tag => tagsB.includes(tag));
+
+      // Require at least TWO shared tags
+      if (sharedTags.length < 2) continue;
+
+      const pairKey = [memoryA.id, memoryB.id].sort().join("-");
+
+      if (processedPairs.has(pairKey)) continue;
+
+      processedPairs.add(pairKey);
+
       suggestions.push({
-        tag: tag,
-        count: matchingMemories.length,
-        memoryIds: matchingMemories.map(m => m.id)
+        tag: sharedTags[0],      // use the first shared tag as the collection name
+        count: 2,
+        memoryIds: [memoryA.id, memoryB.id]
       });
     }
   }
-
-  suggestions.sort((a, b) => b.count - a.count);
 
   return suggestions;
 }
