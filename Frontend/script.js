@@ -2,6 +2,23 @@ console.log("SCRIPT STARTED", new Date().toLocaleTimeString());
 
 const API_BASE = "http://localhost:5000";
 
+async function fetchWithAuth(url, options = {}) {
+    const {
+        data: { session },
+    } = await sbClient.auth.getSession();
+    
+    if (!session) {
+        throw new Error("Not authenticated");
+    }
+
+    const headers = {
+        ...options.headers,
+        "Authorization": `Bearer ${session.access_token}`
+    };
+
+    return fetch(url, { ...options, headers });
+}
+
 /* =========================================================
    ELEMENT REFERENCES
 ========================================================= */
@@ -415,7 +432,7 @@ let trashLoaded = false; // true once we've attempted the first fetch (success O
 async function loadTrash() {
     renderTrashPage(); // show the loading state immediately, don't wait on the network
     try {
-        const response = await fetch(`${API_BASE}/trash`);
+        const response = await fetchWithAuth(`${API_BASE}/trash`);
         const data = await response.json();
         trashedMemories = data.memories || [];
     } catch (error) {
@@ -507,7 +524,7 @@ document.addEventListener("click", async function (e) {
 
         try {
             await Promise.all(ids.map(id =>
-                fetch(`${API_BASE}/memories/${id}/collection`, {
+                fetchWithAuth(`${API_BASE}/memories/${id}/collection`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ collection: tag })
@@ -531,7 +548,7 @@ document.addEventListener("click", async function (e) {
     if (trashBtn) {
         const id = trashBtn.dataset.id;
         try {
-            const res = await fetch(`${API_BASE}/memories/${id}/trash`, { method: "PATCH" });
+            const res = await fetchWithAuth(`${API_BASE}/memories/${id}/trash`, { method: "PATCH" });
             const data = await res.json();
             if (!data.success) throw new Error(data.error || "Server rejected the request");
             memories = memories.filter(m => m && m.id != id);
@@ -546,7 +563,7 @@ document.addEventListener("click", async function (e) {
     if (restoreBtn) {
         const id = restoreBtn.dataset.id;
         try {
-            const res = await fetch(`${API_BASE}/memories/${id}/restore`, { method: "PATCH" });
+            const res = await fetchWithAuth(`${API_BASE}/memories/${id}/restore`, { method: "PATCH" });
             const data = await res.json();
             if (!data.success) throw new Error(data.error || "Server rejected the request");
             trashedMemories = trashedMemories.filter(m => m && m.id != id);
@@ -564,7 +581,7 @@ document.addEventListener("click", async function (e) {
         const confirmed = confirm("Permanently delete this memory? This cannot be undone.");
         if (!confirmed) return;
         try {
-            const res = await fetch(`${API_BASE}/memories/${id}`, { method: "DELETE" });
+            const res = await fetchWithAuth(`${API_BASE}/memories/${id}`, { method: "DELETE" });
             const data = await res.json();
             if (!data.success) throw new Error(data.error || "Server rejected the request");
             trashedMemories = trashedMemories.filter(m => m && m.id != id);
@@ -584,9 +601,9 @@ async function renderAIRecommendations() {
     const aiGrid = document.getElementById("aiGrid");
     try {
         const [dupResponse, deadlineResponse, collectionResponse] = await Promise.all([
-            fetch(`${API_BASE}/memories/duplicates`),
-            fetch(`${API_BASE}/memories/deadlines`),
-            fetch(`${API_BASE}/memories/collection-suggestions`)
+            fetchWithAuth(`${API_BASE}/memories/duplicates`),
+            fetchWithAuth(`${API_BASE}/memories/deadlines`),
+            fetchWithAuth(`${API_BASE}/memories/collection-suggestions`)
         ]);
         const dupData = await dupResponse.json();
         const deadlineData = await deadlineResponse.json();
@@ -657,7 +674,7 @@ let memoriesLoaded = false; // true once we've attempted the first fetch (succes
 async function loadMemories() {
     refreshCurrentPage(); // show the loading state immediately, don't wait on the network
     try {
-        const response = await fetch(`${API_BASE}/memories`);
+        const response = await fetchWithAuth(`${API_BASE}/memories`);
         const data = await response.json();
         if (!data.success) throw new Error(data.error || "Server returned an error");
         memories = (data.memories || []).filter(Boolean);
@@ -685,10 +702,21 @@ function startPolling() {
 }
 
 async function uploadFile(file) {
+    const {
+        data: { user },
+    } = await sbClient.auth.getUser();
+
+    if (!user) {
+        alert("Please log in first.");
+        return;
+    }
     const formData = new FormData();
+
     formData.append("image", file);
+    formData.append("user_id", user.id);
+    
     try {
-        const response = await fetch(`${API_BASE}/upload`, {
+        const response = await fetchWithAuth(`${API_BASE}/upload`, {
             method: "POST",
             body: formData
         });

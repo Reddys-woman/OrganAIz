@@ -19,10 +19,11 @@ async function saveMemory(memoryData) {
   return data[0];
 }
 
-async function getAllMemories() {
+async function getAllMemories(userId) {
   const { data, error } = await supabase
     .from("memories")
     .select("*")
+    .eq("user_id", userId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
@@ -33,13 +34,14 @@ async function getAllMemories() {
   return data;
 }
 
-async function searchMemories(query) {
+async function searchMemories(query, userId) {
   const { data, error } = await supabase
     .from("memories")
     .select("*")
+    .eq("user_id", userId)
     .is("deleted_at", null)
     .or(
-      `title.ilike.%${query}%,summary.ilike.%${query}%,collection.ilike.%${query}%`
+        `title.ilike.%${query}%,summary.ilike.%${query}%,collection.ilike.%${query}%`
     )
     .order("created_at", { ascending: false });
 
@@ -50,11 +52,12 @@ async function searchMemories(query) {
   return data;
 }
 
-async function updateMemory(id, updates) {
+async function updateMemory(id, updates, userId) {
   const { data, error } = await supabase
     .from("memories")
     .update(updates)
     .eq("id", id)
+    .eq("user_id", userId)
     .select();
 
   if (error) {
@@ -64,11 +67,12 @@ async function updateMemory(id, updates) {
   return data[0];
 }
 
-async function trashMemory(id) {
+async function trashMemory(id, userId) {
   const { data, error } = await supabase
     .from("memories")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", id)
+    .eq("user_id", userId)
     .select();
 
   if (error) {
@@ -78,11 +82,12 @@ async function trashMemory(id) {
   return data[0];
 }
 
-async function restoreMemory(id) {
+async function restoreMemory(id, userId) {
   const { data, error } = await supabase
     .from("memories")
     .update({ deleted_at: null })
     .eq("id", id)
+    .eq("user_id", userId)
     .select();
 
   if (error) {
@@ -92,10 +97,11 @@ async function restoreMemory(id) {
   return data[0];
 }
 
-async function getTrashedMemories() {
+async function getTrashedMemories(userId) {
   const { data, error } = await supabase
     .from("memories")
     .select("*")
+    .eq("user_id", userId)
     .not("deleted_at", "is", null)
     .order("deleted_at", { ascending: false });
 
@@ -106,11 +112,12 @@ async function getTrashedMemories() {
   return data;
 }
 
-async function permanentlyDeleteMemory(id) {
+async function permanentlyDeleteMemory(id, userId) {
   const { error } = await supabase
     .from("memories")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_Id", userId);
 
   if (error) {
     throw new Error(error.message);
@@ -121,8 +128,8 @@ async function permanentlyDeleteMemory(id) {
 
 const stringSimilarity = require("string-similarity");
 
-async function findDuplicates() {
-  const memories = await getAllMemories();
+async function findDuplicates(userId) {
+  const memories = await getAllMemories(userId);
 
   const duplicateGroups = [];
   const alreadyGrouped = new Set();
@@ -155,10 +162,11 @@ async function findDuplicates() {
   return duplicateGroups;
 }
 
-async function getUpcomingDeadlines() {
+async function getUpcomingDeadlines(userId) {
   const { data, error } = await supabase
     .from("memories")
     .select("*")
+    .eq("user_id", userId)
     .is("deleted_at", null)
     .not("deadline", "is", null)
     .gte("deadline", new Date().toISOString().split("T")[0])
@@ -171,8 +179,8 @@ async function getUpcomingDeadlines() {
   return data;
 }
 
-async function getCollectionSuggestions() {
-  const memories = await getAllMemories();
+async function getCollectionSuggestions(userId) {
+  const memories = await getAllMemories(userId);
 
   const tagToUngroupedMemories = {};
 
