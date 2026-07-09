@@ -1,13 +1,25 @@
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 const { analyzeImage } = require("./gemini");
 const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory } = require("./supabase");
+
+// Make sure the uploads folder actually exists before multer tries to write into it.
+// Without this, multer throws ENOENT and (since nothing catches it) Express sends
+// back its default HTML error page instead of JSON — which is why the frontend
+// was seeing "Server sent back something that wasn't JSON".
+const UPLOAD_DIR = path.join(__dirname, "uploads");
+if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+    console.log("Created missing uploads/ directory at", UPLOAD_DIR);
+}
 
 const storage = multer.diskStorage({
 
     destination: function (req, file, cb) {
-        cb(null, "uploads/");
+        cb(null, UPLOAD_DIR);
     },
 
     filename: function (req, file, cb) {
@@ -20,7 +32,7 @@ const upload = multer({ storage: storage });
 
 const app = express();
 app.use(cors());
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(UPLOAD_DIR));
 
 app.use((req, res, next) => {
     console.log("CORS middleware reached");
@@ -55,7 +67,7 @@ app.post("/upload", upload.single("image"), async (req, res) => {
             memory: placeholderMemory
         });
 
-        const filePath = "uploads/" + req.file.filename;
+        const filePath = path.join(UPLOAD_DIR, req.file.filename);
         analyzeImage(filePath)
             .then(async (analysis) => {
                 await updateMemory(placeholderMemory.id, {
@@ -138,6 +150,23 @@ app.delete("/memories/:id", async (req, res) => {
     }
 });
     
+// ===========================
+// GLOBAL ERROR HANDLER
+// ===========================
+// Must be defined AFTER all routes. Catches anything that throws/fails
+// (including multer errors) and guarantees the response is always JSON,
+// never Express's default HTML error page.
+app.use((err, req, res, next) => {
+    console.error("Unhandled error:", err);
+    if (res.headersSent) {
+        return next(err);
+    }
+    res.status(500).json({
+        success: false,
+        error: err.message || "Something went wrong on the server"
+    });
+});
+
 app.listen (PORT, () =>{
     console.log (`server is running on http://localhost:${PORT}`)
 })

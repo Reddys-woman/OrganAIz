@@ -364,6 +364,56 @@ TOP BAR
     justify-content:space-between;
     align-items:center;
     margin-bottom:35px;
+    gap:15px;
+}
+
+/* ===========================
+MOBILE MENU TOGGLE / DRAWER CONTROLS
+(hidden on desktop & tablet; only shown at the mobile breakpoint below)
+=========================== */
+
+.menu-toggle{
+    display:none;
+    background:var(--sidebar-bg,#181B24);
+    color:white;
+    width:46px;
+    height:46px;
+    min-width:46px;
+    border-radius:12px;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    flex-shrink:0;
+}
+
+.sidebar-close{
+    display:none;
+    position:absolute;
+    top:20px;
+    right:20px;
+    color:#D4D7DD;
+    font-size:20px;
+    width:36px;
+    height:36px;
+    align-items:center;
+    justify-content:center;
+    border-radius:10px;
+}
+
+.sidebar-close:hover{
+    background:#242938;
+}
+
+.sidebar-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.5);
+    z-index:999;
+}
+
+.sidebar-overlay.active{
+    display:block;
 }
 
 .search-box{
@@ -1131,6 +1181,14 @@ MOBILE
 
 @media(max-width:768px){
 
+.menu-toggle{
+    display:flex;
+}
+
+.sidebar-close{
+    display:flex;
+}
+
 .section-header h2{
     font-size:15px;
 }
@@ -1140,8 +1198,48 @@ MOBILE
     padding:20px;
 }
 
+/* Sidebar becomes a slide-in drawer on mobile instead of vanishing */
 .sidebar{
-    display:none;
+    width:280px;
+    transform:translateX(-100%);
+    transition:transform .3s ease;
+    z-index:1000;
+}
+
+.sidebar.open{
+    transform:translateX(0);
+}
+
+.sidebar h1 {
+    font-size: 20px;
+}
+
+/* Bring back the labels/text that the tablet breakpoint hides,
+   since the drawer is full width again on mobile */
+.sidebar h1,
+.sidebar h3,
+.sidebar p,
+.sidebar h4,
+.menu a[data-page]::after,
+.count{
+    display:block;
+}
+
+.upload-btn h3,
+.upload-btn p{
+    display:block;
+}
+
+.source{
+    justify-content:space-between;
+}
+
+.types .images::after{ content:"Images"; }
+.types .voice-notes::after{ content:"Audio Files"; }
+.types .doc::after{ content:"Documents"; }
+
+.storage-card{
+    display:block;
 }
 
 .topbar{

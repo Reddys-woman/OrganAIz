@@ -36,6 +36,11 @@ const navLinks = document.querySelectorAll(".menu a[data-page]");
 const sourceLinks = document.querySelectorAll(".source[data-page]"); // Images/Audio/PDF sidebar rows
 const pages = document.querySelectorAll(".page");
 
+const sidebar = document.getElementById("sidebar");
+const menuToggle = document.getElementById("menuToggle");
+const sidebarClose = document.getElementById("sidebarClose");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
+
 /* =========================================================
    STATE
 ========================================================= */
@@ -87,6 +92,7 @@ navLinks.forEach(link => {
         e.preventDefault();
         collectionFilter = null;
         showPage(link.dataset.page);
+        closeSidebar();
     });
 });
 
@@ -94,7 +100,45 @@ sourceLinks.forEach(link => {
     link.addEventListener("click", function () {
         collectionFilter = null;
         showPage(link.dataset.page);
+        closeSidebar();
     });
+});
+
+/* =========================================================
+   MOBILE SIDEBAR DRAWER
+   Below 768px the sidebar becomes a slide-in drawer, opened
+   via the hamburger button in the topbar and closed via the
+   X button, the overlay, clicking a nav link, or Escape.
+========================================================= */
+function openSidebar() {
+    sidebar.classList.add("open");
+    sidebarOverlay.classList.add("active");
+    menuToggle.setAttribute("aria-expanded", "true");
+}
+
+function closeSidebar() {
+    sidebar.classList.remove("open");
+    sidebarOverlay.classList.remove("active");
+    menuToggle.setAttribute("aria-expanded", "false");
+}
+
+if (menuToggle) {
+    menuToggle.addEventListener("click", openSidebar);
+}
+if (sidebarClose) {
+    sidebarClose.addEventListener("click", closeSidebar);
+}
+if (sidebarOverlay) {
+    sidebarOverlay.addEventListener("click", closeSidebar);
+}
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeSidebar();
+});
+
+// If the window is resized from mobile back up to desktop/tablet width,
+// make sure the drawer state doesn't stay stuck open.
+window.addEventListener("resize", function () {
+    if (window.innerWidth > 768) closeSidebar();
 });
 
 // "View All" link on the dashboard jumps to the Memories page
