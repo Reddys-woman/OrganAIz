@@ -116,7 +116,9 @@
                     <button id="logoutBtn" type="button" title="Log out">
                         <i class="fa-solid fa-right-from-bracket"></i>
                     </button>
-                    <img src="images/profile.jpg" alt="Profile">
+                    <button id="profileBtn" type="button" class="profile-avatar-btn" title="Profile & settings">
+                        <img src="images/profile.jpg" alt="Profile" id="profileAvatarImg">
+                    </button>
                 </div>
             </header>
 
@@ -127,7 +129,7 @@
 
                 <section class="hero">
                     <div>
-                        <h1>Welcome, User! 👋</h1>
+                        <h1 id="welcomeHeading">Welcome, User! 👋</h1>
                     </div>
                 </section>
 
@@ -214,8 +216,15 @@
                  PAGE: COLLECTIONS
             ============================ -->
             <section class="page" data-page="collections" style="display:none;">
-                <h1 class="page-title">Collections</h1>
-                <p class="page-subtitle">Your memories, grouped automatically by topic.</p>
+                <div class="page-header-row">
+                    <div>
+                        <h1 class="page-title">Collections</h1>
+                        <p class="page-subtitle">Your memories, grouped automatically by topic.</p>
+                    </div>
+                    <button id="newCollectionBtn" class="btn-secondary-action" type="button">
+                        <i class="fa-solid fa-plus"></i> New Collection
+                    </button>
+                </div>
 
                 <section class="section1 full-width">
                     <div class="collections-grid" id="collectionsGrid"></div>
@@ -274,8 +283,20 @@
                  PAGE: TRASH
             ============================ -->
             <section class="page" data-page="trash" style="display:none;">
-                <h1 class="page-title">Trash</h1>
-                <p class="page-subtitle">Deleted memories are kept here until you remove them permanently.</p>
+                <div class="page-header-row">
+                    <div>
+                        <h1 class="page-title">Trash</h1>
+                        <p class="page-subtitle">Deleted memories are kept here until you remove them permanently.</p>
+                    </div>
+                    <div class="trash-bulk-actions">
+                        <button id="restoreAllBtn" class="btn-secondary-action" type="button">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Restore All
+                        </button>
+                        <button id="emptyTrashBtn" class="btn-danger-action" type="button">
+                            <i class="fa-solid fa-trash-can"></i> Empty Trash
+                        </button>
+                    </div>
+                </div>
 
                 <section class="section1 full-width">
                     <div class="memory-grid" id="trashGrid"></div>
@@ -300,6 +321,52 @@
             <i class="fa-solid fa-xmark"></i>
         </button>
         <img id="lightboxImg" src="" alt="Preview">
+        <iframe id="lightboxPdf" src="" title="PDF preview"></iframe>
+    </div>
+
+    <!-- ===========================
+         PROFILE MODAL (opened via the avatar button in the topbar)
+    ============================ -->
+    <div id="profileOverlay" class="profile-overlay">
+        <div class="profile-modal" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+            <button class="profile-modal-close" id="profileModalClose" type="button" aria-label="Close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <h2 id="profileModalTitle">Profile</h2>
+            <p class="profile-modal-subtitle">Update your name and photo.</p>
+
+            <div class="profile-avatar-edit">
+                <div class="profile-avatar-preview-wrap">
+                    <img id="profileModalAvatarPreview" src="images/profile.jpg" alt="Profile photo">
+                    <button class="profile-avatar-edit-btn" id="profileAvatarEditBtn" type="button" title="Change photo">
+                        <i class="fa-solid fa-camera"></i>
+                    </button>
+                </div>
+                <input type="file" id="profileAvatarInput" accept="image/png,image/jpeg,image/webp" hidden>
+            </div>
+
+            <div class="profile-field">
+                <label for="profileNameInput">Display name</label>
+                <input type="text" id="profileNameInput" placeholder="Your name" maxlength="60">
+            </div>
+
+            <div class="profile-field">
+                <label for="profileEmailInput">Email</label>
+                <input type="text" id="profileEmailInput" disabled>
+            </div>
+
+            <p class="profile-modal-status" id="profileModalStatus"></p>
+
+            <div class="profile-modal-actions">
+                <button class="profile-btn-secondary" id="profileModalCancel" type="button">Cancel</button>
+                <button class="profile-btn-primary" id="profileModalSave" type="button">Save changes</button>
+            </div>
+
+            <button class="profile-modal-logout" id="profileModalLogout" type="button">
+                <i class="fa-solid fa-right-from-bracket"></i> Log out
+            </button>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>

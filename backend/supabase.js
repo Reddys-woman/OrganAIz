@@ -217,6 +217,19 @@ async function getCollectionSuggestions(userId) {
   return suggestions;
 }
 
+async function getUserCollections(userId) {
+  const { data, error } = await supabase
+    .from("memories")
+    .select("collection")
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .not("collection", "is", null);
+
+  if (error) throw new Error(error.message);
+
+  return [...new Set(data.map(row => row.collection).filter(Boolean))];
+}
+
 module.exports = {
   supabase,
   saveMemory,
@@ -229,5 +242,6 @@ module.exports = {
   searchMemories,
   findDuplicates,
   getUpcomingDeadlines,
-  getCollectionSuggestions
+  getCollectionSuggestions,
+  getUserCollections
 };

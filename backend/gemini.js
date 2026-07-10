@@ -4,7 +4,12 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const PROMPT = `You are the AI assistant for OrganAIz, a smart memory-organizing application.
+function buildPrompt(existingCollections = []) {
+  const existingList = existingCollections.length > 0
+    ? existingCollections.map(c => `- ${c}`).join("\n")
+    : "(none yet - this is the user's first memory)";
+
+  return `You are the AI assistant for OrganAIz, a smart memory-organizing application.
 
 The uploaded file may be:
 - an image or screenshot
@@ -42,26 +47,20 @@ Tags:
 - Keep tags short (1-2 words each).
 
 Collection:
-Choose the single best collection that groups similar memories together.
+This user already has the following collections:
+${existingList}
 
-Examples include:
-- College
-- Assignments
-- Receipts
-- Finance
-- Travel
-- Recipes
-- Shopping
-- Meetings
-- Internship
-- Design
-- Research
-- Health
-- Personal
-- Work
-- Events
-
-If none fit well, create a concise collection name.
+Rules, in order:
+1. If one of the existing collections above is a good fit for this memory, you MUST reuse it
+   exactly as written (same spelling, case, and singular/plural form). Do not create a new
+   collection that means the same thing as one that already exists (e.g. if "Assignments"
+   already exists, never create "Assignment", "Assignment Work", or "College Assignments" -
+   reuse "Assignments").
+2. Only create a brand-new collection name if none of the existing ones reasonably fit.
+3. When creating a new collection, keep it short (1-2 words) and general enough to hold
+   future similar memories - prefer broad categories like College, Assignments, Receipts,
+   Finance, Travel, Recipes, Shopping, Meetings, Internship, Design, Research, Health,
+   Personal, Work, Events over narrow one-off names.
 
 Deadlines:
 Extract dates only when they represent an actionable event such as:
@@ -83,6 +82,7 @@ Important:
 - Do not guess unreadable text.
 - Return ONLY valid JSON.
 - Do not wrap the response in markdown.`;
+}
 
 function imageToBase64(filePath) {
   const fileBuffer = fs.readFileSync(filePath);
@@ -123,23 +123,49 @@ function getMimeType(filePath) {
   }
 }
 
-async function analyzeFile(filePath, retries = 2) {
+const stringSimilarity = require("string-similarity");
+
+// Safety net on top of the prompt instructions: even when told to reuse
+// existing collections, the model can still drift slightly (e.g. "Assignment"
+// vs "Assignments"). If the returned name is a close match to one that
+// already exists, snap it to the existing one instead of letting a
+// near-duplicate collection get created.
+function normalizeCollection(collectionName, existingCollections) {
+  if (!collectionName || existingCollections.length === 0) return collectionName;
+
+  const exactMatch = existingCollections.find(
+    c => c.toLowerCase() === collectionName.toLowerCase()
+  );
+  if (exactMatch) return exactMatch;
+
+  const { bestMatch } = stringSimilarity.findBestMatch(collectionName.toLowerCase(), existingCollections.map(c => c.toLowerCase()));
+  if (bestMatch.rating >= 0.6) {
+    return existingCollections[existingCollections.map(c => c.toLowerCase()).indexOf(bestMatch.target)];
+  }
+
+  return collectionName;
+}
+
+async function analyzeFile(filePath, existingCollections = [], retries = 2) {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const imageBase64 = imageToBase64(filePath);
   const mimeType = getMimeType(filePath);
+  const prompt = buildPrompt(existingCollections);
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const result = await model.generateContent([
         { inlineData: { data: imageBase64, mimeType: mimeType } },
-        PROMPT
+        prompt
       ]);
 
       let rawText = result.response.text();
       rawText = rawText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
 
-      return JSON.parse(rawText);
+      const analysis = JSON.parse(rawText);
+      analysis.collection = normalizeCollection(analysis.collection, existingCollections);
+      return analysis;
 
     } catch (error) {
       console.log(`Gemini attempt ${attempt + 1} failed:`, error.message);

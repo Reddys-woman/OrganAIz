@@ -169,6 +169,38 @@ function isToday(isoString) {
     return date.toDateString() === now.toDateString();
 }
 
+// Counts consecutive calendar days (up to and including today or yesterday)
+// that have at least one memory saved. Matches the usual "streak" convention:
+// - uploading today keeps/extends the streak
+// - not having uploaded yet today doesn't break it (the day isn't over)
+// - skipping a full day resets it to 0
+function calculateStreak(memoriesList) {
+    const daySet = new Set(
+        memoriesList
+            .filter(m => m && m.created_at)
+            .map(m => new Date(m.created_at).toDateString())
+    );
+
+    if (daySet.size === 0) return 0;
+
+    const cursor = new Date();
+    cursor.setHours(0, 0, 0, 0);
+
+    // If nothing was saved today, start counting from yesterday instead -
+    // today just hasn't happened yet, it shouldn't zero out the streak.
+    if (!daySet.has(cursor.toDateString())) {
+        cursor.setDate(cursor.getDate() - 1);
+    }
+
+    let streak = 0;
+    while (daySet.has(cursor.toDateString())) {
+        streak++;
+        cursor.setDate(cursor.getDate() - 1);
+    }
+
+    return streak;
+}
+
 // Common raster image formats (note: browsers can only visually preview a subset
 // of these via <img> - see PREVIEWABLE_IMAGE_EXT below. Formats like PSD/RAW/INDD
 // are still recognized, tagged, and stored as "images", just shown with a file icon
@@ -191,6 +223,15 @@ function classifyType(memory) {
 function isPreviewableImage(memory) {
     const filename = (memory && memory.filename) || "";
     return PREVIEWABLE_IMAGE_EXT.test(filename);
+}
+
+// Only true PDFs can be embedded and rendered natively by the browser.
+// Other document types (docx, xlsx, pptx, etc.) have no native in-browser
+// renderer, so they still get an icon + an "Open file" link instead.
+const PDF_EXT = /\.pdf$/i;
+function isPreviewablePdf(memory) {
+    const filename = (memory && memory.filename) || "";
+    return PDF_EXT.test(filename);
 }
 
 function createMemoryCard(memory, mode) {
@@ -221,17 +262,31 @@ function createMemoryCard(memory, mode) {
     const type = classifyType(memory);
 
     // Real, browser-decodable images get a clickable thumbnail + lightbox preview.
-    // Everything else (audio, documents, and image formats no browser can render
-    // natively -- PSD/RAW/TIFF/INDD) gets a representative icon instead of a
-    // broken <img>.
+    // PDFs get a clickable tile that opens an inline PDF viewer in the lightbox.
+    // Audio gets a real, playable <audio> control right on the card.
+    // Everything else (docs with no native browser renderer, and image formats
+    // no browser can render natively -- PSD/RAW/TIFF/INDD) gets a representative
+    // icon plus a plain "Open file" link instead.
     let mediaHtml;
     if (type === "image" && isPreviewableImage(memory)) {
         mediaHtml = `<img src="${fileUrl}" class="preview-img" data-fullsrc="${fileUrl}" alt="${memory.title || "Memory image"}">`;
+    } else if (type === "document" && isPreviewablePdf(memory)) {
+        mediaHtml = `<div class="file-icon-placeholder preview-pdf" data-fullsrc="${fileUrl}" title="Click to preview PDF">
+                        <i class="fa-regular fa-file-pdf"></i>
+                        <span class="preview-hint"><i class="fa-solid fa-magnifying-glass"></i> Click to preview</span>
+                     </div>`;
+    } else if (type === "audio") {
+        mediaHtml = `<div class="audio-preview">
+                        <i class="fa-solid fa-waveform-lines"></i>
+                        <audio controls preload="none" src="${fileUrl}"></audio>
+                     </div>`;
     } else {
-        const iconClass = type === "audio" ? "fa-solid fa-music"
-            : type === "document" ? "fa-solid fa-file-lines"
+        const iconClass = type === "document" ? "fa-solid fa-file-lines"
             : "fa-solid fa-image"; // unsupported-preview image formats (psd/raw/tiff/indd...)
-        mediaHtml = `<div class="file-icon-placeholder"><i class="${iconClass}"></i></div>`;
+        mediaHtml = `<div class="file-icon-placeholder">
+                        <i class="${iconClass}"></i>
+                        <a class="preview-hint open-file-link" href="${fileUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open file</a>
+                     </div>`;
     }
 
     card.innerHTML = `
@@ -324,6 +379,9 @@ function renderDashboard() {
     const uniqueCollections = new Set(validMemories.map(m => m.collection).filter(Boolean));
     document.getElementById("statCollections").textContent = uniqueCollections.size;
 
+    const streakDays = calculateStreak(validMemories);
+    document.getElementById("statStreak").textContent = `${streakDays} day${streakDays === 1 ? "" : "s"}`;
+
     // File type counts, shared with the Images/Audio/PDF pages
     document.getElementById("countImages").textContent = validMemories.filter(m => classifyType(m) === "image").length;
     document.getElementById("countVoice").textContent = validMemories.filter(m => classifyType(m) === "audio").length;
@@ -369,11 +427,37 @@ const collectionIcons = {
     "Hackathon": "fa-code"
 };
 
+// Collections are normally just derived from whatever's in memories'
+// `collection` field - there's no separate "collections" table on the
+// backend. So a brand-new collection a user creates before uploading
+// anything into it has nowhere to live except here, client-side, until
+// it has its first memory (at which point it'll show up from `memories`
+// directly like any other collection).
+const CUSTOM_COLLECTIONS_KEY = "organaiz-custom-collections";
+
+function getCustomCollections() {
+    try {
+        return JSON.parse(localStorage.getItem(CUSTOM_COLLECTIONS_KEY)) || [];
+    } catch {
+        return [];
+    }
+}
+
+function saveCustomCollections(list) {
+    localStorage.setItem(CUSTOM_COLLECTIONS_KEY, JSON.stringify(list));
+}
+
 function renderCollectionsPage() {
     const counts = {};
     memories.forEach(m => {
         const key = m.collection || "Uncategorized";
         counts[key] = (counts[key] || 0) + 1;
+    });
+
+    // Merge in any empty custom collections that don't have memories yet.
+    const customCollections = getCustomCollections();
+    customCollections.forEach(name => {
+        if (!(name in counts)) counts[name] = 0;
     });
 
     const collectionNames = Object.keys(counts).sort();
@@ -384,11 +468,15 @@ function renderCollectionsPage() {
         card.className = "collection-card";
         const iconClass = collectionIcons[name] || "fa-folder";
         card.innerHTML = `
+            <button class="collection-delete-btn" data-name="${name}" title="Delete collection">
+                <i class="fa-solid fa-trash"></i>
+            </button>
             <i class="fa-solid ${iconClass}"></i>
             <h3>${name}</h3>
             <p>${counts[name]} ${counts[name] === 1 ? "memory" : "memories"}</p>
         `;
-        card.addEventListener("click", function () {
+        card.addEventListener("click", function (e) {
+            if (e.target.closest(".collection-delete-btn")) return;
             collectionFilter = name;
             showPage("memories");
         });
@@ -397,6 +485,66 @@ function renderCollectionsPage() {
 
     collectionsEmptyMessage.classList.toggle("visible", collectionNames.length === 0);
 }
+
+const newCollectionBtn = document.getElementById("newCollectionBtn");
+if (newCollectionBtn) {
+    newCollectionBtn.addEventListener("click", function () {
+        const name = prompt("Name your new collection:");
+        if (!name || !name.trim()) return;
+        const trimmed = name.trim();
+
+        const existingNames = new Set([
+            ...memories.map(m => (m.collection || "Uncategorized").toLowerCase()),
+            ...getCustomCollections().map(c => c.toLowerCase())
+        ]);
+        if (existingNames.has(trimmed.toLowerCase())) {
+            alert(`A collection called "${trimmed}" already exists.`);
+            return;
+        }
+
+        const customCollections = getCustomCollections();
+        customCollections.push(trimmed);
+        saveCustomCollections(customCollections);
+        renderCollectionsPage();
+    });
+}
+
+// Deleting a collection never deletes the memories inside it - it just
+// ungroups them back into "Uncategorized", since the collection itself
+// (especially an AI-created one the user doesn't want) is just a label.
+document.addEventListener("click", async function (e) {
+    const deleteBtn = e.target.closest(".collection-delete-btn");
+    if (!deleteBtn) return;
+
+    const name = deleteBtn.dataset.name;
+    const affected = memories.filter(m => (m.collection || "Uncategorized") === name);
+
+    const confirmMsg = affected.length > 0
+        ? `Delete the "${name}" collection? Its ${affected.length} ${affected.length === 1 ? "memory" : "memories"} will move to Uncategorized - nothing gets deleted.`
+        : `Delete the empty "${name}" collection?`;
+    if (!confirm(confirmMsg)) return;
+
+    deleteBtn.disabled = true;
+
+    try {
+        await Promise.all(affected.map(m =>
+            fetchWithAuth(`${API_BASE}/memories/${m.id}/collection`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ collection: "Uncategorized" })
+            }).then(() => { m.collection = "Uncategorized"; })
+        ));
+
+        const customCollections = getCustomCollections().filter(c => c !== name);
+        saveCustomCollections(customCollections);
+
+        refreshCurrentPage();
+    } catch (error) {
+        console.error("Failed to delete collection:", error);
+        alert("Couldn't delete that collection. Is the backend running?");
+        deleteBtn.disabled = false;
+    }
+});
 
 /* =========================================================
    IMAGES / AUDIO / PDF PAGES
@@ -606,7 +754,58 @@ document.addEventListener("click", async function (e) {
     }
 });
 
-let isRenderingAI = false;
+/* =========================================================
+   TRASH BULK ACTIONS: Restore All / Empty Trash
+========================================================= */
+const restoreAllBtn = document.getElementById("restoreAllBtn");
+const emptyTrashBtn = document.getElementById("emptyTrashBtn");
+
+if (restoreAllBtn) {
+    restoreAllBtn.addEventListener("click", async function () {
+        const items = trashedMemories.filter(Boolean);
+        if (items.length === 0) return;
+        if (!confirm(`Restore all ${items.length} item${items.length === 1 ? "" : "s"} from trash?`)) return;
+
+        restoreAllBtn.disabled = true;
+        try {
+            const results = await Promise.all(items.map(m =>
+                fetchWithAuth(`${API_BASE}/memories/${m.id}/restore`, { method: "PATCH" })
+                    .then(res => res.json())
+            ));
+            results.forEach(data => { if (data.success && data.memory) memories.unshift(data.memory); });
+            trashedMemories = [];
+            renderTrashPage();
+            refreshCurrentPage();
+        } catch (error) {
+            console.error("Failed to restore all:", error);
+            alert("Couldn't restore everything. Is the backend running?");
+        } finally {
+            restoreAllBtn.disabled = false;
+        }
+    });
+}
+
+if (emptyTrashBtn) {
+    emptyTrashBtn.addEventListener("click", async function () {
+        const items = trashedMemories.filter(Boolean);
+        if (items.length === 0) return;
+        if (!confirm(`Permanently delete all ${items.length} item${items.length === 1 ? "" : "s"} in trash? This cannot be undone.`)) return;
+
+        emptyTrashBtn.disabled = true;
+        try {
+            await Promise.all(items.map(m =>
+                fetchWithAuth(`${API_BASE}/memories/${m.id}`, { method: "DELETE" })
+            ));
+            trashedMemories = [];
+            renderTrashPage();
+        } catch (error) {
+            console.error("Failed to empty trash:", error);
+            alert("Couldn't empty the trash. Is the backend running?");
+        } finally {
+            emptyTrashBtn.disabled = false;
+        }
+    });
+}
 
 async function renderAIRecommendations() {
     if (isRenderingAI) return;
@@ -627,10 +826,15 @@ async function renderAIRecommendations() {
             const card = document.createElement("div");
             card.className = "ai-card blue";
             card.innerHTML = `
-                <div class="ai-icon">📄</div>
+                <div class="ai-card-top">
+                    <div class="ai-icon"><i class="fa-solid fa-clone"></i></div>
+                    <span class="ai-badge">Duplicate</span>
+                </div>
                 <h3>Possible Duplicates</h3>
                 <p>"${group[0].title}" and "${group[1].title}" look similar. Review them?</p>
-                <button class="review-duplicate-btn" data-ids="${group[0].id},${group[1].id}">Review</button>
+                <div class="ai-card-actions">
+                    <button class="review-duplicate-btn" data-ids="${group[0].id},${group[1].id}">Review</button>
+                </div>
             `;
             aiGrid.appendChild(card);
         });
@@ -642,10 +846,15 @@ async function renderAIRecommendations() {
             const card = document.createElement("div");
             card.className = "ai-card red";
             card.innerHTML = `
-                <div class="ai-icon">⏰</div>
+                <div class="ai-card-top">
+                    <div class="ai-icon"><i class="fa-solid fa-clock"></i></div>
+                    <span class="ai-badge">Deadline</span>
+                </div>
                 <h3>Deadline ${dayText}</h3>
                 <p>"${memory.title}" has a deadline on ${memory.deadline}.</p>
-                <button class="view-deadline-btn" data-id="${memory.id}">View</button>
+                <div class="ai-card-actions">
+                    <button class="view-deadline-btn" data-id="${memory.id}">View</button>
+                </div>
             `;
             aiGrid.appendChild(card);
         });
@@ -654,11 +863,16 @@ async function renderAIRecommendations() {
             const card = document.createElement("div");
             card.className = "ai-card yellow";
             card.innerHTML = `
-                <div class="ai-icon">📂</div>
+                <div class="ai-card-top">
+                    <div class="ai-icon"><i class="fa-solid fa-folder-plus"></i></div>
+                    <span class="ai-badge">Suggestion</span>
+                </div>
                 <h3>Organize Memories</h3>
                 <p>You have ${suggestion.count} screenshots related to "${suggestion.tag}". Create a collection?</p>
-                <button class="create-collection-btn" data-ids="${suggestion.memoryIds.join(",")}" data-tag="${suggestion.tag}">Create Collection</button>
-                <button class="view-collection-suggestion-btn" data-ids="${suggestion.memoryIds.join(",")}">Just Review</button>
+                <div class="ai-card-actions">
+                    <button class="create-collection-btn" data-ids="${suggestion.memoryIds.join(",")}" data-tag="${suggestion.tag}">Create Collection</button>
+                    <button class="view-collection-suggestion-btn" data-ids="${suggestion.memoryIds.join(",")}">Just Review</button>
+                </div>
             `;
             aiGrid.appendChild(card);
         });
@@ -782,22 +996,37 @@ dropZone.addEventListener("drop", function (event) {
 ========================================================= */
 const imageLightbox = document.getElementById("imageLightbox");
 const lightboxImg = document.getElementById("lightboxImg");
+const lightboxPdf = document.getElementById("lightboxPdf");
 const lightboxClose = document.getElementById("lightboxClose");
 
-function openLightbox(src) {
-    lightboxImg.src = src;
+function openLightbox(src, kind) {
+    if (kind === "pdf") {
+        lightboxPdf.src = src;
+        lightboxPdf.style.display = "block";
+        lightboxImg.style.display = "none";
+    } else {
+        lightboxImg.src = src;
+        lightboxImg.style.display = "block";
+        lightboxPdf.style.display = "none";
+    }
     imageLightbox.classList.add("visible");
 }
 
 function closeLightbox() {
     imageLightbox.classList.remove("visible");
     lightboxImg.src = "";
+    lightboxPdf.src = ""; // stop the PDF viewer from staying loaded in the background
 }
 
 document.addEventListener("click", function (e) {
     const previewImg = e.target.closest(".preview-img");
     if (previewImg) {
-        openLightbox(previewImg.dataset.fullsrc);
+        openLightbox(previewImg.dataset.fullsrc, "image");
+        return;
+    }
+    const previewPdf = e.target.closest(".preview-pdf");
+    if (previewPdf) {
+        openLightbox(previewPdf.dataset.fullsrc, "pdf");
     }
 });
 
@@ -839,3 +1068,177 @@ searchInput.addEventListener("input", () => {
    INIT
 ========================================================= */
 loadMemories();
+
+/* =========================================================
+   PROFILE MODAL
+   Lets the user change their display name and avatar.
+   Both are stored in Supabase Auth's user_metadata, so no
+   backend changes or storage buckets are needed.
+========================================================= */
+const profileBtn = document.getElementById("profileBtn");
+const profileOverlay = document.getElementById("profileOverlay");
+const profileModalClose = document.getElementById("profileModalClose");
+const profileModalCancel = document.getElementById("profileModalCancel");
+const profileModalSave = document.getElementById("profileModalSave");
+const profileModalLogout = document.getElementById("profileModalLogout");
+const profileModalStatus = document.getElementById("profileModalStatus");
+const profileNameInput = document.getElementById("profileNameInput");
+const profileEmailInput = document.getElementById("profileEmailInput");
+const profileAvatarInput = document.getElementById("profileAvatarInput");
+const profileAvatarEditBtn = document.getElementById("profileAvatarEditBtn");
+const profileModalAvatarPreview = document.getElementById("profileModalAvatarPreview");
+const profileAvatarImg = document.getElementById("profileAvatarImg"); // topbar avatar
+const welcomeHeading = document.getElementById("welcomeHeading");
+
+const DEFAULT_AVATAR = "images/profile.jpg";
+let pendingAvatarDataUrl = null; // holds a newly picked photo until Save is clicked
+
+function displayNameFromUser(user) {
+    if (!user) return "";
+    return user.user_metadata?.full_name || (user.email ? user.email.split("@")[0] : "");
+}
+
+function avatarUrlFromUser(user) {
+    return user?.user_metadata?.avatar_url || DEFAULT_AVATAR;
+}
+
+// Paint the topbar avatar + "Welcome, Name!" heading from whatever's already
+// in the current session, so it's correct on every page load without
+// needing to open the modal first.
+async function applyProfileToPage() {
+    const { data: { user } } = await sbClient.auth.getUser();
+    if (!user) return;
+    const name = displayNameFromUser(user);
+    const avatarUrl = avatarUrlFromUser(user);
+    if (profileAvatarImg) profileAvatarImg.src = avatarUrl;
+    if (welcomeHeading) welcomeHeading.textContent = `Welcome, ${name}! 👋`;
+}
+
+function setProfileStatus(message, isError) {
+    profileModalStatus.textContent = message || "";
+    profileModalStatus.classList.toggle("error", !!isError);
+}
+
+async function openProfileModal() {
+    setProfileStatus("");
+    pendingAvatarDataUrl = null;
+    profileModalSave.disabled = false;
+    profileModalCancel.disabled = false;
+
+    const { data: { user } } = await sbClient.auth.getUser();
+    if (!user) {
+        alert("Please log in first.");
+        return;
+    }
+
+    profileNameInput.value = displayNameFromUser(user);
+    profileEmailInput.value = user.email || "";
+    profileModalAvatarPreview.src = avatarUrlFromUser(user);
+
+    profileOverlay.classList.add("visible");
+}
+
+function closeProfileModal() {
+    profileOverlay.classList.remove("visible");
+    pendingAvatarDataUrl = null;
+}
+
+// Resize + compress the chosen photo client-side so it stays small enough
+// to store directly in Supabase's user_metadata (no storage bucket needed).
+function fileToResizedDataUrl(file, maxSize) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Could not read that file"));
+        reader.onload = () => {
+            const img = new Image();
+            img.onerror = () => reject(new Error("That doesn't look like a valid image"));
+            img.onload = () => {
+                let { width, height } = img;
+                if (width > height) {
+                    if (width > maxSize) { height *= maxSize / width; width = maxSize; }
+                } else {
+                    if (height > maxSize) { width *= maxSize / height; height = maxSize; }
+                }
+                const canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+                canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL("image/jpeg", 0.85));
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+profileBtn.addEventListener("click", openProfileModal);
+profileModalClose.addEventListener("click", closeProfileModal);
+profileModalCancel.addEventListener("click", closeProfileModal);
+profileOverlay.addEventListener("click", function (e) {
+    if (e.target === profileOverlay) closeProfileModal(); // click on backdrop only
+});
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && profileOverlay.classList.contains("visible")) closeProfileModal();
+});
+
+profileAvatarEditBtn.addEventListener("click", () => profileAvatarInput.click());
+
+profileAvatarInput.addEventListener("change", async function () {
+    const file = profileAvatarInput.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+        setProfileStatus("Please choose an image file.", true);
+        return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+        setProfileStatus("That image is too large (max 5MB).", true);
+        return;
+    }
+
+    try {
+        const dataUrl = await fileToResizedDataUrl(file, 200);
+        pendingAvatarDataUrl = dataUrl;
+        profileModalAvatarPreview.src = dataUrl; // instant preview
+        setProfileStatus("");
+    } catch (err) {
+        setProfileStatus(err.message, true);
+    }
+});
+
+profileModalSave.addEventListener("click", async function () {
+    const newName = profileNameInput.value.trim();
+    if (!newName) {
+        setProfileStatus("Display name can't be empty.", true);
+        return;
+    }
+
+    profileModalSave.disabled = true;
+    profileModalCancel.disabled = true;
+    setProfileStatus("Saving...");
+
+    const metadataUpdate = { full_name: newName };
+    if (pendingAvatarDataUrl) metadataUpdate.avatar_url = pendingAvatarDataUrl;
+
+    try {
+        const { error } = await sbClient.auth.updateUser({ data: metadataUpdate });
+        if (error) throw error;
+
+        await applyProfileToPage();
+        setProfileStatus("Saved!");
+        setTimeout(closeProfileModal, 600);
+    } catch (err) {
+        console.error("Failed to update profile:", err);
+        setProfileStatus(err.message || "Failed to save changes.", true);
+    } finally {
+        profileModalSave.disabled = false;
+        profileModalCancel.disabled = false;
+    }
+});
+
+profileModalLogout.addEventListener("click", async function () {
+    await sbClient.auth.signOut();
+    window.location.href = "login.html";
+});
+
+applyProfileToPage();

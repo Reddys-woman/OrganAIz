@@ -1,11 +1,22 @@
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 const { analyzeFile } = require("./gemini");
-const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory, searchMemories, findDuplicates, getUpcomingDeadlines, getCollectionSuggestions } = require("./supabase");
+const { saveMemory, getAllMemories, updateMemory, trashMemory, restoreMemory, getTrashedMemories, permanentlyDeleteMemory, searchMemories, findDuplicates, getUpcomingDeadlines, getCollectionSuggestions, getUserCollections } = require("./supabase");
+
+// Make sure the uploads folder exists no matter which machine this runs on
+// (it's gitignored, so a fresh clone won't have it until this runs).
+const UPLOAD_DIR = path.join(__dirname, "uploads");
+if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+    console.log("Created missing uploads/ directory at", UPLOAD_DIR);
+}
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, "uploads/");
+        cb(null, UPLOAD_DIR);
     },
 
     filename: function (req, file, cb) {
@@ -75,6 +86,8 @@ async function authMiddleware(req, res, next) {
 
 app.use(cors({
     origin: [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
         "http://localhost:5500",
         "http://127.0.0.1:5500"
     ],
@@ -84,7 +97,7 @@ app.use(cors({
 app.use(express.json());
 
 // Make uploaded images publicly accessible
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(UPLOAD_DIR));
 
 // Everything below this requires login
 app.use(authMiddleware);
@@ -124,8 +137,9 @@ app.post("/upload", upload.single("image"), async (req, res) => {
             memory: placeholderMemory
         });
 
-        const filePath = "uploads/" + req.file.filename;
-        analyzeFile(filePath)
+        const filePath = path.join(UPLOAD_DIR, req.file.filename);
+        const existingCollections = await getUserCollections(req.user.id).catch(() => []);
+        analyzeFile(filePath, existingCollections)
             .then(async (analysis) => {
                 await updateMemory(
                     placeholderMemory.id,
@@ -268,6 +282,17 @@ app.patch("/memories/:id/collection", async (req, res) => {
         console.error("Failed to update collection:", error.message);
         res.status(500).json({ success: false, error: "Failed to update collection" });
     }
+});
+
+// ===========================
+// GLOBAL ERROR HANDLER
+// Guarantees the frontend always gets JSON back, even from errors
+// thrown by multer (e.g. rejected file types) or anything unhandled.
+// ===========================
+app.use((err, req, res, next) => {
+    console.error("Unhandled error:", err);
+    if (res.headersSent) return next(err);
+    res.status(500).json({ success: false, error: err.message || "Something went wrong on the server" });
 });
 
 app.listen(PORT, () => {
