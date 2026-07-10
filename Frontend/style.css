@@ -317,6 +317,11 @@ BOTTOM CARDS
     height:100%;
     border-radius:30px;
     background:#8B5CF6;
+    transition:width .4s ease, background .3s ease;
+}
+
+.progress-fill.storage-warning{
+    background:#E5484D;
 }
 
 /* ===========================
@@ -1655,9 +1660,38 @@ LARGE DESKTOP
 .memory-footer{
     display:flex;
     justify-content:space-between;
+    align-items:center;
     margin-top:20px;
     font-size:13px;
     color:var(--text-secondary);
     flex-wrap:wrap;
     gap:10px;
+}
+
+.memory-footer i{
+    margin-right:5px;
+    color:var(--accent);
+}
+
+.collection-select{
+    border:1px solid var(--card-border);
+    background:var(--card-bg);
+    color:var(--text-secondary);
+    font-size:13px;
+    font-family:inherit;
+    font-weight:500;
+    padding:6px 10px;
+    border-radius:8px;
+    cursor:pointer;
+    max-width:150px;
+}
+
+.collection-select:hover{
+    border-color:var(--accent);
+    color:var(--accent);
+}
+
+.collection-select:disabled{
+    opacity:.6;
+    cursor:wait;
 }

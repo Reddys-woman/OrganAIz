@@ -129,7 +129,8 @@ app.post("/upload", upload.single("image"), async (req, res) => {
             summary: "AI analysis in progress",
             tags: [],
             collection: "Inbox",
-            deadline: null
+            deadline: null,
+            file_size: req.file.size
         });
 
         res.json({

@@ -7,10 +7,22 @@ const supabase = createClient(
 );
 
 async function saveMemory(memoryData) {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("memories")
     .insert([memoryData])
     .select();
+
+  // If the memories table hasn't had the `file_size` column added yet
+  // (see the ALTER TABLE note), don't fail the whole upload over a stat
+  // that's just used for the storage-used display - retry without it.
+  if (error && "file_size" in memoryData && /file_size/i.test(error.message)) {
+    console.warn("`file_size` column missing on memories table - saving without it. Run: ALTER TABLE memories ADD COLUMN file_size bigint;");
+    const { file_size, ...withoutFileSize } = memoryData;
+    ({ data, error } = await supabase
+      .from("memories")
+      .insert([withoutFileSize])
+      .select());
+  }
 
   if (error) {
     throw new Error(error.message);

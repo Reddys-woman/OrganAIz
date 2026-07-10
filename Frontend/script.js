@@ -234,6 +234,20 @@ function isPreviewablePdf(memory) {
     return PDF_EXT.test(filename);
 }
 
+// Builds the <option> list for a collection <select>: every collection that
+// already has memories, plus any empty custom ones, plus an entry to create
+// a brand new one on the fly. Shared by memory cards and the Collections page.
+function buildCollectionOptions(currentValue) {
+    const fromMemories = memories.map(m => m.collection || "Uncategorized");
+    const names = [...new Set([...fromMemories, ...getCustomCollections()])].sort();
+
+    const optionsHtml = names
+        .map(name => `<option value="${name}" ${name === currentValue ? "selected" : ""}>${name}</option>`)
+        .join("");
+
+    return optionsHtml + `<option value="__new__">+ New collection...</option>`;
+}
+
 function createMemoryCard(memory, mode) {
     // Defensive: a failed upload/restore can leave a null/undefined entry in
     // an array before this ever gets called - never render a card for it.
@@ -289,6 +303,12 @@ function createMemoryCard(memory, mode) {
                      </div>`;
     }
 
+    const collectionFieldHtml = mode === "normal"
+        ? `<select class="collection-select" data-id="${memory.id}" onclick="event.stopPropagation()">
+             ${buildCollectionOptions(memory.collection)}
+           </select>`
+        : `<span><i class="fa-solid fa-folder"></i> ${memory.collection || "General"}</span>`;
+
     card.innerHTML = `
         <div class="memory-image-wrap">
             ${mediaHtml}
@@ -299,8 +319,8 @@ function createMemoryCard(memory, mode) {
             <h3>${memory.title || "Untitled"}</h3>
             <p>${memory.summary || ""}</p>
             <div class="memory-footer">
-                <span>📂 ${memory.collection || "General"}</span>
-                <span>📅 ${memory.created_at ? formatTime(memory.created_at) : "just now"}</span>
+                ${collectionFieldHtml}
+                <span><i class="fa-regular fa-calendar"></i> ${memory.created_at ? formatTime(memory.created_at) : "just now"}</span>
             </div>
             ${trashActionsHtml}
         </div>
@@ -322,6 +342,54 @@ function cleanFilename(filename) {
         .replace(/\.[a-z0-9]+$/i, ""); // drop the file extension
 }
 
+function getFileExtension(filename) {
+    const match = /\.([a-z0-9]+)$/i.exec(filename || "");
+    return match ? match[1].toLowerCase() : "";
+}
+
+// Friendly, searchable words for a date: "2026-07-11", "july", "11", "2026",
+// "friday", plus "today"/"yesterday"/"this week" so "find what I saved
+// yesterday" or "show me stuff from July" actually works.
+function getDateTokens(isoString) {
+    if (!isoString) return [];
+    const date = new Date(isoString);
+    if (isNaN(date)) return [];
+
+    const now = new Date();
+    const startOfDay = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const daysAgo = Math.round((startOfDay(now) - startOfDay(date)) / (1000 * 60 * 60 * 24));
+
+    const tokens = [
+        date.toISOString().split("T")[0],                       // 2026-07-11
+        date.toLocaleDateString(),                               // 7/11/2026
+        date.toLocaleDateString(undefined, { month: "long" }),   // july
+        date.toLocaleDateString(undefined, { month: "short" }),  // jul
+        date.toLocaleDateString(undefined, { weekday: "long" }), // friday
+        String(date.getDate()),                                 // 11
+        String(date.getFullYear())                               // 2026
+    ];
+
+    if (daysAgo === 0) tokens.push("today");
+    else if (daysAgo === 1) tokens.push("yesterday");
+    else if (daysAgo >= 0 && daysAgo <= 7) tokens.push("this week", "last week");
+    else if (daysAgo > 7 && daysAgo <= 14) tokens.push("last week");
+    else if (daysAgo > 14 && daysAgo <= 31) tokens.push("this month");
+
+    return tokens;
+}
+
+// Friendly type words so "audio", "voice", "pdf", "image", "screenshot",
+// "doc", "mp3", "png", etc. all match the right memories.
+function getTypeTokens(memory) {
+    const type = classifyType(memory);
+    const ext = getFileExtension(memory.filename);
+    const tokens = [type, ext];
+    if (type === "audio") tokens.push("voice", "recording", "sound");
+    if (type === "image") tokens.push("photo", "picture", "screenshot");
+    if (type === "document") tokens.push("doc", "file");
+    return tokens;
+}
+
 function memoryMatchesQuery(memory, query) {
     if (!query) return true;
     const haystack = [
@@ -329,7 +397,9 @@ function memoryMatchesQuery(memory, query) {
         memory.summary,
         memory.collection,
         cleanFilename(memory.filename),
-        ...(memory.tags || [])
+        ...(memory.tags || []),
+        ...getTypeTokens(memory),
+        ...getDateTokens(memory.created_at)
     ]
         .filter(Boolean)
         .join(" ")
@@ -387,7 +457,43 @@ function renderDashboard() {
     document.getElementById("countVoice").textContent = validMemories.filter(m => classifyType(m) === "audio").length;
     document.getElementById("countdoc").textContent = validMemories.filter(m => classifyType(m) === "document").length;
 
+    updateStorageUsage();
+
     renderAIRecommendations();
+}
+
+/* =========================================================
+   STORAGE USED
+   Sums the real file_size (in bytes) captured at upload time
+   across active AND trashed memories - trashed files still take
+   up real disk space until they're permanently deleted. Memories
+   uploaded before file_size existed just count as 0 bytes.
+========================================================= */
+const STORAGE_LIMIT_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB
+
+function formatBytes(bytes) {
+    if (!bytes || bytes <= 0) return "0 MB";
+    const gb = bytes / (1024 * 1024 * 1024);
+    if (gb >= 1) return `${gb.toFixed(gb >= 10 ? 1 : 2)} GB`;
+    const mb = bytes / (1024 * 1024);
+    if (mb >= 1) return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`;
+    const kb = bytes / 1024;
+    return `${Math.max(kb, 0.1).toFixed(1)} KB`;
+}
+
+function updateStorageUsage() {
+    const fill = document.getElementById("storageProgressFill");
+    const text = document.getElementById("storageUsedText");
+    if (!fill || !text) return;
+
+    const totalBytes = [...memories, ...trashedMemories]
+        .filter(Boolean)
+        .reduce((sum, m) => sum + (Number(m.file_size) || 0), 0);
+
+    const percent = Math.min(100, (totalBytes / STORAGE_LIMIT_BYTES) * 100);
+    fill.style.width = `${percent}%`;
+    fill.classList.toggle("storage-warning", percent >= 80);
+    text.textContent = `${formatBytes(totalBytes)} / 10 GB`;
 }
 
 /* =========================================================
@@ -486,28 +592,85 @@ function renderCollectionsPage() {
     collectionsEmptyMessage.classList.toggle("visible", collectionNames.length === 0);
 }
 
+// Shared by the "New Collection" button and the "+ New collection..." option
+// inside every card's dropdown. Returns the trimmed name on success, or null
+// if the user cancelled or the name already exists.
+function addCustomCollection(promptMessage) {
+    const name = prompt(promptMessage || "Name your new collection:");
+    if (!name || !name.trim()) return null;
+    const trimmed = name.trim();
+
+    const existingNames = new Set([
+        ...memories.map(m => (m.collection || "Uncategorized").toLowerCase()),
+        ...getCustomCollections().map(c => c.toLowerCase())
+    ]);
+    if (existingNames.has(trimmed.toLowerCase())) {
+        alert(`A collection called "${trimmed}" already exists.`);
+        return null;
+    }
+
+    const customCollections = getCustomCollections();
+    customCollections.push(trimmed);
+    saveCustomCollections(customCollections);
+    return trimmed;
+}
+
 const newCollectionBtn = document.getElementById("newCollectionBtn");
 if (newCollectionBtn) {
     newCollectionBtn.addEventListener("click", function () {
-        const name = prompt("Name your new collection:");
-        if (!name || !name.trim()) return;
-        const trimmed = name.trim();
-
-        const existingNames = new Set([
-            ...memories.map(m => (m.collection || "Uncategorized").toLowerCase()),
-            ...getCustomCollections().map(c => c.toLowerCase())
-        ]);
-        if (existingNames.has(trimmed.toLowerCase())) {
-            alert(`A collection called "${trimmed}" already exists.`);
-            return;
-        }
-
-        const customCollections = getCustomCollections();
-        customCollections.push(trimmed);
-        saveCustomCollections(customCollections);
-        renderCollectionsPage();
+        if (addCustomCollection()) renderCollectionsPage();
     });
 }
+
+// Lets a memory actually be moved into any collection (including a brand
+// new empty one) right from its card - otherwise a manually-created
+// collection would have no way to ever receive a file.
+document.addEventListener("change", async function (e) {
+    const select = e.target.closest(".collection-select");
+    if (!select) return;
+
+    const id = select.dataset.id;
+    const previousValue = select.dataset.previousValue || "";
+    let newValue = select.value;
+
+    if (newValue === "__new__") {
+        const created = addCustomCollection("Name the new collection to move this memory into:");
+        if (!created) {
+            select.value = previousValue;
+            return;
+        }
+        newValue = created;
+    }
+
+    select.disabled = true;
+    try {
+        const res = await fetchWithAuth(`${API_BASE}/memories/${id}/collection`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ collection: newValue })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || "Server rejected the request");
+
+        const memory = memories.find(m => m && m.id == id);
+        if (memory) memory.collection = newValue;
+
+        refreshCurrentPage();
+    } catch (error) {
+        console.error("Failed to move memory to collection:", error);
+        alert("Couldn't move that memory. Is the backend running?");
+        select.value = previousValue;
+    } finally {
+        select.disabled = false;
+    }
+});
+
+// Track the previously-selected value on every select so a failed/cancelled
+// change can revert to it instead of leaving the dropdown on the new option.
+document.addEventListener("focusin", function (e) {
+    const select = e.target.closest(".collection-select");
+    if (select) select.dataset.previousValue = select.value;
+});
 
 // Deleting a collection never deletes the memories inside it - it just
 // ungroups them back into "Uncategorized", since the collection itself
@@ -602,6 +765,7 @@ async function loadTrash() {
     } finally {
         trashLoaded = true;
         renderTrashPage();
+        updateStorageUsage();
     }
 }
 
@@ -747,6 +911,7 @@ document.addEventListener("click", async function (e) {
             if (!data.success) throw new Error(data.error || "Server rejected the request");
             trashedMemories = trashedMemories.filter(m => m && m.id != id);
             renderTrashPage();
+            updateStorageUsage();
         } catch (error) {
             console.error("Failed to permanently delete memory:", error);
             alert("Couldn't permanently delete that memory. Is the backend running?");
@@ -776,6 +941,7 @@ if (restoreAllBtn) {
             trashedMemories = [];
             renderTrashPage();
             refreshCurrentPage();
+            updateStorageUsage();
         } catch (error) {
             console.error("Failed to restore all:", error);
             alert("Couldn't restore everything. Is the backend running?");
@@ -798,6 +964,7 @@ if (emptyTrashBtn) {
             ));
             trashedMemories = [];
             renderTrashPage();
+            updateStorageUsage();
         } catch (error) {
             console.error("Failed to empty trash:", error);
             alert("Couldn't empty the trash. Is the backend running?");
@@ -807,22 +974,37 @@ if (emptyTrashBtn) {
     });
 }
 
+let isRenderingAI = false;
+
 async function renderAIRecommendations() {
     if (isRenderingAI) return;
     isRenderingAI = true;
     const aiGrid = document.getElementById("aiGrid");
     try {
-        const [dupResponse, deadlineResponse, collectionResponse] = await Promise.all([
-            fetchWithAuth(`${API_BASE}/memories/duplicates`),
-            fetchWithAuth(`${API_BASE}/memories/deadlines`),
-            fetchWithAuth(`${API_BASE}/memories/collection-suggestions`)
+        // allSettled + per-response success checks: if one of these three
+        // endpoints errors out, the other two should still render instead of
+        // the whole section silently going blank.
+        const [dupResult, deadlineResult, collectionResult] = await Promise.allSettled([
+            fetchWithAuth(`${API_BASE}/memories/duplicates`).then(r => r.json()),
+            fetchWithAuth(`${API_BASE}/memories/deadlines`).then(r => r.json()),
+            fetchWithAuth(`${API_BASE}/memories/collection-suggestions`).then(r => r.json())
         ]);
-        const dupData = await dupResponse.json();
-        const deadlineData = await deadlineResponse.json();
-        const collectionData = await collectionResponse.json();
+
+        const dupData = dupResult.status === "fulfilled" ? dupResult.value : null;
+        const deadlineData = deadlineResult.status === "fulfilled" ? deadlineResult.value : null;
+        const collectionData = collectionResult.status === "fulfilled" ? collectionResult.value : null;
+
+        if (dupResult.status === "rejected") console.error("Duplicates fetch failed:", dupResult.reason);
+        if (deadlineResult.status === "rejected") console.error("Deadlines fetch failed:", deadlineResult.reason);
+        if (collectionResult.status === "rejected") console.error("Collection suggestions fetch failed:", collectionResult.reason);
+
         aiGrid.innerHTML = "";
 
-        dupData.duplicateGroups.forEach(group => {
+        const duplicateGroups = (dupData && dupData.success && dupData.duplicateGroups) || [];
+        const deadlineMemories = (deadlineData && deadlineData.success && deadlineData.memories) || [];
+        const collectionSuggestions = (collectionData && collectionData.success && collectionData.suggestions) || [];
+
+        duplicateGroups.forEach(group => {
             const card = document.createElement("div");
             card.className = "ai-card blue";
             card.innerHTML = `
@@ -839,7 +1021,7 @@ async function renderAIRecommendations() {
             aiGrid.appendChild(card);
         });
 
-        deadlineData.memories.forEach(memory => {
+        deadlineMemories.forEach(memory => {
             const daysUntil = Math.ceil((new Date(memory.deadline) - new Date()) / (1000 * 60 * 60 * 24));
             const dayText = daysUntil === 0 ? "today" : daysUntil === 1 ? "tomorrow" : `in ${daysUntil} days`;
 
@@ -859,7 +1041,7 @@ async function renderAIRecommendations() {
             aiGrid.appendChild(card);
         });
 
-        collectionData.suggestions.forEach(suggestion => {
+        collectionSuggestions.forEach(suggestion => {
             const card = document.createElement("div");
             card.className = "ai-card yellow";
             card.innerHTML = `
