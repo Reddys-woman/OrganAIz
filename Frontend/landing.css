@@ -953,6 +953,7 @@ h1,h2,h3,h4{
     position:absolute;
     top:-16px;
     left:50%;
+    z-index:2;
     transform:translateX(-50%) rotate(-3deg);
     display:inline-flex;
     align-items:center;
@@ -1834,6 +1835,116 @@ html.has-fine-pointer button{
 .team-anchor,
 .how-anchor{
     scroll-margin-top:90px;
+}
+
+/* ---- Report viewer (Know more about OrganAIz) ---- */
+.report-viewer{
+    max-width:820px;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:20px;
+}
+
+.report-viewer-frame{
+    position:relative;
+    width:100%;
+    border-radius:22px;
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+    box-shadow:0 25px 60px var(--shadow-strong);
+    overflow:hidden;
+}
+
+.report-viewer-scroll{
+    max-height:640px;
+    overflow-y:auto;
+    scroll-behavior:smooth;
+    padding:28px 28px 8px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+}
+
+.report-viewer-scroll::-webkit-scrollbar{
+    width:8px;
+}
+.report-viewer-scroll::-webkit-scrollbar-track{
+    background:transparent;
+}
+.report-viewer-scroll::-webkit-scrollbar-thumb{
+    background:var(--accent-soft);
+    border-radius:10px;
+}
+.report-viewer-scroll::-webkit-scrollbar-thumb:hover{
+    background:var(--accent);
+}
+
+.report-page-canvas{
+    width:100%;
+    height:auto;
+    border-radius:10px;
+    box-shadow:0 6px 20px rgba(0,0,0,.10);
+    display:block;
+}
+
+.report-viewer-loading{
+    padding:100px 0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    color:var(--text-secondary);
+    font-size:14.5px;
+    font-weight:500;
+}
+
+.report-fade-top,
+.report-fade-bottom{
+    position:absolute;
+    left:0;
+    right:0;
+    height:34px;
+    pointer-events:none;
+}
+
+.report-fade-top{
+    top:0;
+    background:linear-gradient(180deg, var(--card-bg), transparent);
+}
+
+.report-fade-bottom{
+    bottom:0;
+    background:linear-gradient(0deg, var(--card-bg), transparent);
+}
+
+.report-download-link{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:14px;
+    font-weight:600;
+    color:var(--accent);
+    text-decoration:none;
+    padding:10px 20px;
+    border-radius:100px;
+    background:var(--accent-soft);
+    transition:.2s;
+}
+
+.report-download-link:hover{
+    background:var(--accent);
+    color:#fff;
+    transform:translateY(-2px);
+}
+
+@media (max-width:640px){
+    .report-viewer-scroll{
+        max-height:480px;
+        padding:18px 18px 8px;
+    }
 }
 
 /* ---- Mascot ---- */

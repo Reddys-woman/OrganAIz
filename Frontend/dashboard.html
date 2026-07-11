@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>OrganAIz - Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI0M0QjVGRCIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzdDM0FFRCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxnIGZpbGw9InVybCgjZykiPjxwYXRoIGQ9Ik0zMCA4Yy0zLjUgMC02LjUgMi04IDVjLTQgLjMtNyAzLjctNyA3LjhjMCAxLjcuNSAzLjIgMS40IDQuNWMtMS43IDEuNi0yLjcgMy44LTIuNyA2LjNjMCAzLjkgMi42IDcuMiA2LjIgOC4yYy40IDMuOCAzLjYgNi43IDcuNSA2LjdoMi42VjE1YzAtMy45LTMuMS03LTctN3oiLz48cGF0aCBkPSJNMzQgOGMzLjUgMCA2LjUgMiA4IDVjNCAuMyA3IDMuNyA3IDcuOGMwIDEuNy0uNSAzLjItMS40IDQuNWMxLjcgMS42IDIuNyAzLjggMi43IDYuM2MwIDMuOS0yLjYgNy4yLTYuMiA4LjJjLS40IDMuOC0zLjYgNi43LTcuNSA2LjdoLTIuNlYxNWMwLTMuOSAzLjEtNyA3LTd6Ii8+PC9nPjxjaXJjbGUgY3g9IjIyIiBjeT0iMTgiIHI9IjEuOCIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iLjUiLz48Y2lyY2xlIGN4PSI0MiIgY3k9IjE4IiByPSIxLjgiIGZpbGw9IiNmZmYiIG9wYWNpdHk9Ii41Ii8+PC9zdmc+">
 
     <link rel="stylesheet" href="style.css">
 
@@ -26,6 +27,9 @@
              SIDEBAR (stays fixed, never re-rendered)
         ============================ -->
         <aside class="sidebar">
+            <button class="sidebar-close-btn" id="sidebarCloseBtn" type="button" aria-label="Close menu">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
             <div>
                 <a class="logo" href="index.html" title="Back to Home">
                     <i class="fa-solid fa-brain"></i>
@@ -81,6 +85,13 @@
                         </span>
                         <span class="count" id="countdoc">0</span>
                     </div>
+
+                    <div class="source source-disabled" id="videosComingSoon" title="Video support is coming soon">
+                        <span class="types">
+                            <i class="fa-solid fa-video videos"></i>
+                        </span>
+                        <span class="coming-soon-badge">Soon</span>
+                    </div>
                 </div>
             </div>
 
@@ -96,6 +107,9 @@
             </div>
         </aside>
 
+        <!-- Backdrop shown behind the sidebar when it slides in on mobile -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
         <!-- ===========================
              MAIN CONTENT (topbar stays fixed, #pageContainer swaps)
         ============================ -->
@@ -103,6 +117,10 @@
 
             <!-- Top Bar - stays the same across every page -->
             <header class="topbar">
+                <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" title="Open menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+
                 <div class="search-box">
                     <i class="fa-solid fa-magnifying-glass"></i>
                     <input type="text" id="searchInput"
@@ -322,6 +340,46 @@
         </button>
         <img id="lightboxImg" src="" alt="Preview">
         <iframe id="lightboxPdf" src="" title="PDF preview"></iframe>
+        <div id="lightboxOffice" class="lightbox-office"><div class="lightbox-office-inner" id="lightboxOfficeInner"></div></div>
+    </div>
+
+    <!-- ===========================
+         ONBOARDING TOUR (first-login-only walkthrough)
+    ============================ -->
+    <div id="onboardingBackdrop" class="onboarding-backdrop">
+        <div id="onboardingSpotlight" class="onboarding-spotlight"></div>
+        <div id="onboardingTooltip" class="onboarding-tooltip">
+            <span class="onboarding-step-count" id="onboardingStepCount">1 / 4</span>
+            <h4 id="onboardingTooltipTitle"></h4>
+            <p id="onboardingTooltipText"></p>
+            <div class="onboarding-tooltip-actions">
+                <button type="button" class="onboarding-skip-btn" id="onboardingSkipBtn">Skip tour</button>
+                <button type="button" class="onboarding-next-btn" id="onboardingNextBtn">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===========================
+         TOASTS (replaces alert() popups)
+    ============================ -->
+    <div id="toastStack" class="toast-stack"></div>
+
+    <!-- ===========================
+         GENERIC APP MODAL (replaces confirm() and prompt() popups)
+    ============================ -->
+    <div id="appModalBackdrop" class="app-modal-backdrop">
+        <div class="app-modal" role="dialog" aria-modal="true">
+            <button class="app-modal-close" id="appModalClose" type="button" aria-label="Close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 id="appModalTitle"></h3>
+            <p id="appModalMessage"></p>
+            <div id="appModalFields" class="app-modal-fields"></div>
+            <div class="app-modal-actions">
+                <button type="button" class="app-modal-btn app-modal-cancel" id="appModalCancel">Cancel</button>
+                <button type="button" class="app-modal-btn app-modal-confirm" id="appModalConfirm">Confirm</button>
+            </div>
+        </div>
     </div>
 
     <!-- ===========================
@@ -372,6 +430,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script src="supabase-client.js"></script>
     <script src="auth-guard.js"></script>
+    <!-- Office document preview libraries: mammoth.js renders .docx to HTML,
+         SheetJS (xlsx) renders .xlsx/.xls to an HTML table -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.7.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="script.js"></script>
 </body>
 

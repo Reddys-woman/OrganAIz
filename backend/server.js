@@ -41,7 +41,25 @@ const upload = multer({
             "audio/mp4",
             "audio/x-m4a",
             "audio/m4a",
-            "video/mp4"
+            "video/mp4",
+
+            // Word
+            "application/msword", // .doc
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+
+            // Excel
+            "application/vnd.ms-excel", // .xls
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+
+            // PowerPoint
+            "application/vnd.ms-powerpoint", // .ppt
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .pptx
+
+            // Plain text / CSV (browsers report these inconsistently, so cover both)
+            "text/plain",
+            "text/csv",
+            "application/csv",
+            "application/vnd.ms-excel.sheet.macroEnabled.12"
         ];
     
 
@@ -155,8 +173,27 @@ app.post("/upload", upload.single("image"), async (req, res) => {
                 );
                 console.log(`Memory ${placeholderMemory.id} updated with AI analysis`);
             })
-            .catch((error) => {
+            .catch(async (error) => {
                 console.error(`Gemini analysis failed for memory ${placeholderMemory.id}:`, error.message);
+                // Don't leave this stuck on "Processing..." forever - fall back to
+                // a usable, filename-based memory so the upload still completes
+                // even when AI analysis fails (unsupported format for Gemini,
+                // network hiccup, etc.)
+                try {
+                    await updateMemory(
+                        placeholderMemory.id,
+                        {
+                            title: req.file.originalname || "Untitled file",
+                            summary: "This file is saved, but AI analysis couldn't read it automatically.",
+                            tags: [],
+                            collection: "Inbox",
+                            deadline: null
+                        },
+                        req.user.id
+                    );
+                } catch (fallbackError) {
+                    console.error(`Also failed to save fallback for memory ${placeholderMemory.id}:`, fallbackError.message);
+                }
             });
 
     } catch (error) {
@@ -282,6 +319,29 @@ app.patch("/memories/:id/collection", async (req, res) => {
     } catch (error) {
         console.error("Failed to update collection:", error.message);
         res.status(500).json({ success: false, error: "Failed to update collection" });
+    }
+});
+
+// Lets the card's "..." menu edit title / summary / tags without re-running
+// AI analysis - just a plain field update, same pattern as /collection above.
+app.patch("/memories/:id/details", async (req, res) => {
+    try {
+        const updates = {};
+        if (typeof req.body.title === "string") updates.title = req.body.title.trim();
+        if (typeof req.body.summary === "string") updates.summary = req.body.summary.trim();
+        if (Array.isArray(req.body.tags)) {
+            updates.tags = req.body.tags.map(t => String(t).trim()).filter(Boolean);
+        }
+
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({ success: false, error: "Nothing to update" });
+        }
+
+        const updated = await updateMemory(req.params.id, updates, req.user.id);
+        res.json({ success: true, memory: updated });
+    } catch (error) {
+        console.error("Failed to update memory details:", error.message);
+        res.status(500).json({ success: false, error: "Failed to update memory" });
     }
 });
 

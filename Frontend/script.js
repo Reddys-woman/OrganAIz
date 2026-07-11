@@ -2,6 +2,164 @@ console.log("SCRIPT STARTED", new Date().toLocaleTimeString());
 
 const API_BASE = "http://localhost:5000";
 
+/* =========================================================
+   TOAST NOTIFICATIONS
+   A small, classy replacement for alert() - non-blocking,
+   auto-dismisses, stacks in the top-right corner.
+========================================================= */
+const toastStack = document.getElementById("toastStack");
+const TOAST_ICONS = {
+    success: "fa-solid fa-check",
+    error: "fa-solid fa-triangle-exclamation",
+    info: "fa-solid fa-circle-info"
+};
+
+function showToast(message, type = "info", duration = 7000) {
+    if (!toastStack) { console.log(`[${type}] ${message}`); return; }
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon"><i class="${TOAST_ICONS[type] || TOAST_ICONS.info}"></i></span>
+        <span class="toast-msg">${message}</span>
+        <button type="button" class="toast-close" aria-label="Dismiss"><i class="fa-solid fa-xmark"></i></button>
+    `;
+    const remove = () => {
+        toast.classList.add("toast-leaving");
+        setTimeout(() => toast.remove(), 220);
+    };
+    toast.querySelector(".toast-close").addEventListener("click", remove);
+    const timer = setTimeout(remove, duration);
+    toast.addEventListener("mouseenter", () => clearTimeout(timer));
+    toastStack.appendChild(toast);
+}
+
+/* =========================================================
+   APP MODAL
+   A single reusable modal that replaces both confirm() and
+   prompt() with something that matches the rest of the UI.
+   - showConfirm(message, opts) -> Promise<boolean>
+   - showFormModal(opts)        -> Promise<Record<string,string>|null>
+========================================================= */
+const appModalBackdrop = document.getElementById("appModalBackdrop");
+const appModalEl = appModalBackdrop ? appModalBackdrop.querySelector(".app-modal") : null;
+const appModalTitle = document.getElementById("appModalTitle");
+const appModalMessage = document.getElementById("appModalMessage");
+const appModalFields = document.getElementById("appModalFields");
+const appModalCancel = document.getElementById("appModalCancel");
+const appModalConfirm = document.getElementById("appModalConfirm");
+const appModalClose = document.getElementById("appModalClose");
+
+let appModalResolver = null;
+
+function closeAppModal(result) {
+    if (!appModalBackdrop) return;
+    appModalBackdrop.classList.remove("visible");
+    if (appModalResolver) {
+        appModalResolver(result);
+        appModalResolver = null;
+    }
+}
+
+if (appModalCancel) appModalCancel.addEventListener("click", () => closeAppModal(null));
+if (appModalClose) appModalClose.addEventListener("click", () => closeAppModal(null));
+if (appModalBackdrop) {
+    appModalBackdrop.addEventListener("click", (e) => {
+        if (e.target === appModalBackdrop) closeAppModal(null);
+    });
+}
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && appModalBackdrop && appModalBackdrop.classList.contains("visible")) {
+        closeAppModal(null);
+    }
+});
+
+// Renders one field's markup based on its type. "tags" is just a text input
+// with a hint, since a full tag-chip editor is overkill here.
+function renderModalField(field) {
+    const id = `appModalField-${field.name}`;
+    const label = `<label for="${id}">${field.label}</label>`;
+    if (field.type === "textarea") {
+        return `<div class="app-modal-field">
+                    ${label}
+                    <textarea id="${id}" name="${field.name}" rows="${field.rows || 4}" placeholder="${field.placeholder || ""}">${field.value || ""}</textarea>
+                </div>`;
+    }
+    const hint = field.type === "tags" ? `<div class="tag-input-hint">Separate tags with commas</div>` : "";
+    return `<div class="app-modal-field">
+                ${label}
+                <input type="text" id="${id}" name="${field.name}" value="${(field.value || "").replace(/"/g, "&quot;")}" placeholder="${field.placeholder || ""}">
+                ${hint}
+            </div>`;
+}
+
+// Plain confirm dialog. Resolves true/false, just like window.confirm().
+function showConfirm(message, opts = {}) {
+    if (!appModalBackdrop) return Promise.resolve(window.confirm(message));
+
+    appModalTitle.textContent = opts.title || "Are you sure?";
+    appModalMessage.textContent = message;
+    appModalMessage.style.display = "block";
+    appModalFields.innerHTML = "";
+    appModalFields.style.display = "none";
+    appModalConfirm.textContent = opts.confirmLabel || "Confirm";
+    appModalConfirm.classList.toggle("danger", !!opts.danger);
+    appModalCancel.textContent = opts.cancelLabel || "Cancel";
+
+    appModalConfirm.onclick = () => closeAppModal(true);
+
+    return new Promise((resolve) => {
+        appModalResolver = (result) => resolve(!!result);
+        appModalBackdrop.classList.add("visible");
+    });
+}
+
+// Form dialog with one or more fields. Resolves with an object of
+// { fieldName: value } on confirm, or null on cancel.
+function showFormModal(opts = {}) {
+    if (!appModalBackdrop) return Promise.resolve(null);
+
+    appModalTitle.textContent = opts.title || "";
+    if (opts.message) {
+        appModalMessage.textContent = opts.message;
+        appModalMessage.style.display = "block";
+    } else {
+        appModalMessage.style.display = "none";
+    }
+
+    const fields = opts.fields || [];
+    appModalFields.innerHTML = fields.map(renderModalField).join("");
+    appModalFields.style.display = "flex";
+    appModalConfirm.textContent = opts.confirmLabel || "Save";
+    appModalConfirm.classList.toggle("danger", !!opts.danger);
+    appModalCancel.textContent = opts.cancelLabel || "Cancel";
+
+    const firstInput = appModalFields.querySelector("input, textarea");
+
+    appModalConfirm.onclick = () => {
+        const values = {};
+        let valid = true;
+        fields.forEach(field => {
+            const el = document.getElementById(`appModalField-${field.name}`);
+            const value = el ? el.value : "";
+            if (field.required && !value.trim()) valid = false;
+            values[field.name] = field.type === "tags"
+                ? value.split(",").map(t => t.trim()).filter(Boolean)
+                : value;
+        });
+        if (!valid) {
+            showToast("Please fill in the required field.", "error");
+            return;
+        }
+        closeAppModal(values);
+    };
+
+    return new Promise((resolve) => {
+        appModalResolver = (result) => resolve(result);
+        appModalBackdrop.classList.add("visible");
+        setTimeout(() => firstInput && firstInput.focus(), 50);
+    });
+}
+
 async function fetchWithAuth(url, options = {}) {
     const {
         data: { session },
@@ -58,6 +216,36 @@ const sourceLinks = document.querySelectorAll(".source[data-page]"); // Images/A
 const pages = document.querySelectorAll(".page");
 
 /* =========================================================
+   MOBILE SIDEBAR DRAWER
+   On mobile there's no room for a permanent sidebar, so it becomes
+   a slide-in drawer opened via the hamburger button in the topbar.
+========================================================= */
+const sidebarEl = document.querySelector(".sidebar");
+const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+
+function openSidebar() {
+    sidebarEl.classList.add("open");
+    sidebarBackdrop.classList.add("visible");
+    document.body.style.overflow = "hidden"; // prevent background scroll while drawer is open
+}
+
+function closeSidebar() {
+    sidebarEl.classList.remove("open");
+    sidebarBackdrop.classList.remove("visible");
+    document.body.style.overflow = "";
+}
+
+if (mobileMenuBtn) mobileMenuBtn.addEventListener("click", openSidebar);
+if (sidebarCloseBtn) sidebarCloseBtn.addEventListener("click", closeSidebar);
+if (sidebarBackdrop) sidebarBackdrop.addEventListener("click", closeSidebar);
+
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeSidebar();
+});
+
+/* =========================================================
    STATE
 ========================================================= */
 let memories = [];        // active (non-trashed) memories
@@ -110,6 +298,7 @@ navLinks.forEach(link => {
         collectionFilter = null;
         idFilter = null;
         showPage(link.dataset.page);
+        closeSidebar();
     });
 });
 
@@ -118,8 +307,18 @@ sourceLinks.forEach(link => {
         collectionFilter = null;
         idFilter = null;
         showPage(link.dataset.page);
+        closeSidebar();
     });
 });
+
+// "Videos" has no page yet - just let people know it's on the way instead
+// of silently doing nothing when tapped.
+const videosComingSoon = document.getElementById("videosComingSoon");
+if (videosComingSoon) {
+    videosComingSoon.addEventListener("click", function () {
+        showToast("Video support is coming soon!", "info");
+    });
+}
 
 // "View All" link on the dashboard jumps to the Memories page
 document.querySelectorAll("[data-page-link]").forEach(link => {
@@ -234,6 +433,15 @@ function isPreviewablePdf(memory) {
     return PDF_EXT.test(filename);
 }
 
+// docx/xlsx/xls can be rendered client-side with mammoth.js / SheetJS - see
+// openOfficePreview(). Legacy .doc and .ppt/.pptx have no lightweight
+// in-browser renderer, so those still fall back to "Open file".
+const OFFICE_PREVIEW_EXT = /\.(docx|xlsx|xls)$/i;
+function isPreviewableOfficeDoc(memory) {
+    const filename = (memory && memory.filename) || "";
+    return OFFICE_PREVIEW_EXT.test(filename);
+}
+
 // Builds the <option> list for a collection <select>: every collection that
 // already has memories, plus any empty custom ones, plus an entry to create
 // a brand new one on the fly. Shared by memory cards and the Collections page.
@@ -248,6 +456,43 @@ function buildCollectionOptions(currentValue) {
     return optionsHtml + `<option value="__new__">+ New collection...</option>`;
 }
 
+/* =========================================================
+   READ MORE / READ LESS
+   Summaries are clamped to 2 lines by default so cards stay tidy.
+   After a grid is (re)rendered we measure each summary and only
+   reveal the "Read more" button on the ones that actually overflow.
+========================================================= */
+const expandedSummaryIds = new Set();
+
+function measureSummaryOverflow(container) {
+    if (!container) return;
+    requestAnimationFrame(() => {
+        container.querySelectorAll(".summary-wrap").forEach(wrap => {
+            const p = wrap.querySelector(".memory-summary");
+            if (!p) return;
+            wrap.classList.toggle("has-overflow", p.scrollHeight > p.clientHeight + 1);
+        });
+    });
+}
+
+document.addEventListener("click", function (e) {
+    const btn = e.target.closest(".read-more-btn");
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const wrap = btn.closest(".summary-wrap");
+    const expanded = wrap.classList.toggle("expanded");
+    btn.textContent = expanded ? "Read less" : "Read more";
+    // Remember this across re-renders (e.g. the background polling that
+    // refreshes cards while something else is still "Processing...") so
+    // expanding a summary doesn't get silently wiped out moments later.
+    const id = wrap.dataset.id;
+    if (id) {
+        if (expanded) expandedSummaryIds.add(id);
+        else expandedSummaryIds.delete(id);
+    }
+}, true); // capture phase: run before any ancestor's own click handler can act on this click
+
 function createMemoryCard(memory, mode) {
     // Defensive: a failed upload/restore can leave a null/undefined entry in
     // an array before this ever gets called - never render a card for it.
@@ -259,12 +504,6 @@ function createMemoryCard(memory, mode) {
 
     const tagText = memory.tags && memory.tags.length > 0 ? memory.tags[0] : (memory.collection || "General");
 
-    const trashIconHtml = mode === "normal"
-        ? `<button class="trash-icon-btn" data-id="${memory.id}" title="Move to Trash">
-             <i class="fa-solid fa-trash"></i>
-           </button>`
-        : "";
-
     const trashActionsHtml = mode === "trash"
         ? `<div class="memory-actions">
              <button class="restore-btn" data-id="${memory.id}"><i class="fa-solid fa-rotate-left"></i> Restore</button>
@@ -274,6 +513,23 @@ function createMemoryCard(memory, mode) {
 
     const fileUrl = `${API_BASE}/uploads/${memory.filename || ""}`;
     const type = classifyType(memory);
+
+    // Every action that used to be its own floating icon (download, delete)
+    // now lives in one "..." dropdown, alongside editing the title/summary/tags.
+    const cardMenuHtml = mode === "normal"
+        ? `<div class="card-menu">
+             <button type="button" class="card-menu-btn" data-id="${memory.id}" title="More options">
+                 <i class="fa-solid fa-ellipsis-vertical"></i>
+             </button>
+             <div class="card-menu-dropdown">
+                 <button type="button" class="card-menu-item" data-action="edit-title" data-id="${memory.id}"><i class="fa-solid fa-pen"></i> Edit title</button>
+                 <button type="button" class="card-menu-item" data-action="edit-summary" data-id="${memory.id}"><i class="fa-solid fa-align-left"></i> Edit summary</button>
+                 <button type="button" class="card-menu-item" data-action="edit-tags" data-id="${memory.id}"><i class="fa-solid fa-tags"></i> Edit tags</button>
+                 <a class="card-menu-item" href="${fileUrl}" download="${memory.filename || ""}"><i class="fa-solid fa-download"></i> Download</a>
+                 <button type="button" class="card-menu-item danger" data-action="delete" data-id="${memory.id}"><i class="fa-solid fa-trash"></i> Delete</button>
+             </div>
+           </div>`
+        : "";
 
     // Real, browser-decodable images get a clickable thumbnail + lightbox preview.
     // PDFs get a clickable tile that opens an inline PDF viewer in the lightbox.
@@ -294,6 +550,13 @@ function createMemoryCard(memory, mode) {
                         <i class="fa-solid fa-waveform-lines"></i>
                         <audio controls preload="none" src="${fileUrl}"></audio>
                      </div>`;
+    } else if (type === "document" && isPreviewableOfficeDoc(memory)) {
+        const ext = getFileExtension(memory.filename);
+        const isSheet = ext === "xlsx" || ext === "xls";
+        mediaHtml = `<div class="file-icon-placeholder preview-office" data-fullsrc="${fileUrl}" data-ext="${ext}" title="Click to preview">
+                        <i class="fa-solid ${isSheet ? "fa-file-excel" : "fa-file-word"}"></i>
+                        <span class="preview-hint"><i class="fa-solid fa-magnifying-glass"></i> Click to preview</span>
+                     </div>`;
     } else {
         const iconClass = type === "document" ? "fa-solid fa-file-lines"
             : "fa-solid fa-image"; // unsupported-preview image formats (psd/raw/tiff/indd...)
@@ -312,12 +575,15 @@ function createMemoryCard(memory, mode) {
     card.innerHTML = `
         <div class="memory-image-wrap">
             ${mediaHtml}
-            ${trashIconHtml}
+            ${cardMenuHtml}
         </div>
         <div class="memory-content">
             <span class="tag">${tagText}</span>
             <h3>${memory.title || "Untitled"}</h3>
-            <p>${memory.summary || ""}</p>
+            <div class="summary-wrap${expandedSummaryIds.has(String(memory.id)) ? " expanded" : ""}" data-id="${memory.id}">
+                <p class="memory-summary">${memory.summary || ""}</p>
+                <button type="button" class="read-more-btn">${expandedSummaryIds.has(String(memory.id)) ? "Read less" : "Read more"}</button>
+            </div>
             <div class="memory-footer">
                 ${collectionFieldHtml}
                 <span><i class="fa-regular fa-calendar"></i> ${memory.created_at ? formatTime(memory.created_at) : "just now"}</span>
@@ -431,6 +697,7 @@ function renderDashboard() {
         const card = createMemoryCard(memory, "normal");
         if (card) memoryGrid.appendChild(card);
     });
+    measureSummaryOverflow(memoryGrid);
 
     if (!memoriesLoaded) {
         emptyMessage.textContent = "Loading your memories...";
@@ -518,6 +785,7 @@ function renderMemoriesPage() {
         const card = createMemoryCard(memory, "normal");
         if (card) allMemoriesGrid.appendChild(card);
     });
+    measureSummaryOverflow(allMemoriesGrid);
     memoriesEmptyMessage.classList.toggle("visible", filtered.length === 0);
 }
 
@@ -573,12 +841,14 @@ function renderCollectionsPage() {
         const card = document.createElement("div");
         card.className = "collection-card";
         const iconClass = collectionIcons[name] || "fa-folder";
+        const description = getCollectionDescriptions()[name];
         card.innerHTML = `
             <button class="collection-delete-btn" data-name="${name}" title="Delete collection">
                 <i class="fa-solid fa-trash"></i>
             </button>
             <i class="fa-solid ${iconClass}"></i>
             <h3>${name}</h3>
+            ${description ? `<p class="collection-desc">${description}</p>` : ""}
             <p>${counts[name]} ${counts[name] === 1 ? "memory" : "memories"}</p>
         `;
         card.addEventListener("click", function (e) {
@@ -595,30 +865,64 @@ function renderCollectionsPage() {
 // Shared by the "New Collection" button and the "+ New collection..." option
 // inside every card's dropdown. Returns the trimmed name on success, or null
 // if the user cancelled or the name already exists.
-function addCustomCollection(promptMessage) {
-    const name = prompt(promptMessage || "Name your new collection:");
-    if (!name || !name.trim()) return null;
-    const trimmed = name.trim();
+const COLLECTION_DESCRIPTIONS_KEY = "organaiz-collection-descriptions";
+
+function getCollectionDescriptions() {
+    try {
+        return JSON.parse(localStorage.getItem(COLLECTION_DESCRIPTIONS_KEY)) || {};
+    } catch {
+        return {};
+    }
+}
+
+function saveCollectionDescription(name, description) {
+    const map = getCollectionDescriptions();
+    map[name] = description;
+    localStorage.setItem(COLLECTION_DESCRIPTIONS_KEY, JSON.stringify(map));
+}
+
+function deleteCollectionDescription(name) {
+    const map = getCollectionDescriptions();
+    delete map[name];
+    localStorage.setItem(COLLECTION_DESCRIPTIONS_KEY, JSON.stringify(map));
+}
+
+async function addCustomCollection(promptMessage) {
+    const result = await showFormModal({
+        title: "New Collection",
+        message: promptMessage || null,
+        fields: [
+            { name: "name", label: "Collection name", type: "text", placeholder: "e.g. Recipes", required: true },
+            { name: "description", label: "Description (optional)", type: "textarea", placeholder: "What kind of memories go here?", rows: 3 }
+        ],
+        confirmLabel: "Create"
+    });
+    if (!result || !result.name || !result.name.trim()) return null;
+    const trimmed = result.name.trim();
 
     const existingNames = new Set([
         ...memories.map(m => (m.collection || "Uncategorized").toLowerCase()),
         ...getCustomCollections().map(c => c.toLowerCase())
     ]);
     if (existingNames.has(trimmed.toLowerCase())) {
-        alert(`A collection called "${trimmed}" already exists.`);
+        showToast(`A collection called "${trimmed}" already exists.`, "error");
         return null;
     }
 
     const customCollections = getCustomCollections();
     customCollections.push(trimmed);
     saveCustomCollections(customCollections);
+
+    if (result.description && result.description.trim()) {
+        saveCollectionDescription(trimmed, result.description.trim());
+    }
     return trimmed;
 }
 
 const newCollectionBtn = document.getElementById("newCollectionBtn");
 if (newCollectionBtn) {
-    newCollectionBtn.addEventListener("click", function () {
-        if (addCustomCollection()) renderCollectionsPage();
+    newCollectionBtn.addEventListener("click", async function () {
+        if (await addCustomCollection()) renderCollectionsPage();
     });
 }
 
@@ -634,7 +938,7 @@ document.addEventListener("change", async function (e) {
     let newValue = select.value;
 
     if (newValue === "__new__") {
-        const created = addCustomCollection("Name the new collection to move this memory into:");
+        const created = await addCustomCollection("Name the new collection to move this memory into:");
         if (!created) {
             select.value = previousValue;
             return;
@@ -658,7 +962,7 @@ document.addEventListener("change", async function (e) {
         refreshCurrentPage();
     } catch (error) {
         console.error("Failed to move memory to collection:", error);
-        alert("Couldn't move that memory. Is the backend running?");
+        showToast("Couldn't move that memory. Is the backend running?", "error");
         select.value = previousValue;
     } finally {
         select.disabled = false;
@@ -685,7 +989,8 @@ document.addEventListener("click", async function (e) {
     const confirmMsg = affected.length > 0
         ? `Delete the "${name}" collection? Its ${affected.length} ${affected.length === 1 ? "memory" : "memories"} will move to Uncategorized - nothing gets deleted.`
         : `Delete the empty "${name}" collection?`;
-    if (!confirm(confirmMsg)) return;
+    const confirmed = await showConfirm(confirmMsg, { title: "Delete collection", confirmLabel: "Delete", danger: true });
+    if (!confirmed) return;
 
     deleteBtn.disabled = true;
 
@@ -698,13 +1003,14 @@ document.addEventListener("click", async function (e) {
             }).then(() => { m.collection = "Uncategorized"; })
         ));
 
+        deleteCollectionDescription(name);
         const customCollections = getCustomCollections().filter(c => c !== name);
         saveCustomCollections(customCollections);
 
         refreshCurrentPage();
     } catch (error) {
         console.error("Failed to delete collection:", error);
-        alert("Couldn't delete that collection. Is the backend running?");
+        showToast("Couldn't delete that collection. Is the backend running?", "error");
         deleteBtn.disabled = false;
     }
 });
@@ -725,6 +1031,7 @@ function renderTypeFilteredPage(type, grid, emptyMsgEl, emptyText) {
         const card = createMemoryCard(memory, "normal");
         if (card) grid.appendChild(card);
     });
+    measureSummaryOverflow(grid);
 
     if (!memoriesLoaded) {
         emptyMsgEl.textContent = "Loading...";
@@ -778,6 +1085,7 @@ function renderTrashPage() {
         const card = createMemoryCard(memory, "trash");
         if (card) trashGrid.appendChild(card);
     });
+    measureSummaryOverflow(trashGrid);
 
     // Only claim "Trash is empty" when there truly is nothing in trash --
     // if a search query is just filtering the view, or we're still waiting
@@ -814,6 +1122,133 @@ function refreshCurrentPage() {
 /* =========================================================
    TRASH / RESTORE / DELETE ACTIONS (event delegation)
 ========================================================= */
+/* =========================================================
+   PER-CARD "..." MENU
+   One dropdown per card replaces the separate download/delete icons:
+   edit title, edit summary, edit tags, download, delete.
+========================================================= */
+document.addEventListener("click", function (e) {
+    const menuBtn = e.target.closest(".card-menu-btn");
+    const openDropdown = document.querySelector(".card-menu.open");
+
+    // Close any open menu first, unless we just clicked its own toggle button
+    if (openDropdown && (!menuBtn || menuBtn.closest(".card-menu") !== openDropdown)) {
+        openDropdown.classList.remove("open");
+    }
+    if (menuBtn) {
+        menuBtn.closest(".card-menu").classList.toggle("open");
+    }
+});
+
+document.addEventListener("click", async function (e) {
+    const actionBtn = e.target.closest(".card-menu-item[data-action]");
+    if (!actionBtn) return;
+
+    const id = actionBtn.dataset.id;
+    const memory = memories.find(m => m && m.id == id);
+    if (!memory) return;
+    actionBtn.closest(".card-menu")?.classList.remove("open");
+
+    if (actionBtn.dataset.action === "edit-title") {
+        const result = await showFormModal({
+            title: "Edit title",
+            fields: [{ name: "title", label: "Title", type: "text", value: memory.title || "", required: true }],
+            confirmLabel: "Save"
+        });
+        if (!result) return;
+        try {
+            const res = await fetchWithAuth(`${API_BASE}/memories/${id}/details`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title: result.title })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || "Server rejected the request");
+            memory.title = data.memory.title;
+            refreshCurrentPage();
+            showToast("Title updated.", "success");
+        } catch (error) {
+            console.error("Failed to update title:", error);
+            showToast("Couldn't update the title. Is the backend running?", "error");
+        }
+    }
+
+    if (actionBtn.dataset.action === "edit-summary") {
+        const result = await showFormModal({
+            title: "Edit summary",
+            fields: [{ name: "summary", label: "Summary", type: "textarea", value: memory.summary || "", rows: 5 }],
+            confirmLabel: "Save"
+        });
+        if (!result) return;
+        try {
+            const res = await fetchWithAuth(`${API_BASE}/memories/${id}/details`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ summary: result.summary })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || "Server rejected the request");
+            memory.summary = data.memory.summary;
+            refreshCurrentPage();
+            showToast("Summary updated.", "success");
+        } catch (error) {
+            console.error("Failed to update summary:", error);
+            showToast("Couldn't update the summary. Is the backend running?", "error");
+        }
+    }
+
+    if (actionBtn.dataset.action === "edit-tags") {
+        const result = await showFormModal({
+            title: "Edit tags",
+            fields: [{ name: "tags", label: "Tags", type: "tags", value: (memory.tags || []).join(", ") }],
+            confirmLabel: "Save"
+        });
+        if (!result) return;
+        try {
+            const res = await fetchWithAuth(`${API_BASE}/memories/${id}/details`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tags: result.tags })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || "Server rejected the request");
+            memory.tags = data.memory.tags;
+            refreshCurrentPage();
+            showToast("Tags updated.", "success");
+        } catch (error) {
+            console.error("Failed to update tags:", error);
+            showToast("Couldn't update the tags. Is the backend running?", "error");
+        }
+    }
+
+    if (actionBtn.dataset.action === "delete") {
+        const confirmed = await showConfirm("Move this memory to Trash?", { title: "Move to Trash", confirmLabel: "Move to Trash", danger: true });
+        if (!confirmed) return;
+        try {
+            const res = await fetchWithAuth(`${API_BASE}/memories/${id}/trash`, { method: "PATCH" });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || "Server rejected the request");
+            memories = memories.filter(m => m && m.id != id);
+            refreshCurrentPage();
+            showToast("Moved to Trash.", "success");
+        } catch (error) {
+            console.error("Failed to move memory to trash:", error);
+            showToast("Moved to Trash failed - is the backend running?", "error");
+        }
+    }
+});
+
+// Close an open card menu on outside click or Escape
+document.addEventListener("click", function (e) {
+    if (e.target.closest(".card-menu")) return;
+    document.querySelectorAll(".card-menu.open").forEach(el => el.classList.remove("open"));
+});
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+        document.querySelectorAll(".card-menu.open").forEach(el => el.classList.remove("open"));
+    }
+});
+
 document.addEventListener("click", async function (e) {
     const trashBtn = e.target.closest(".trash-icon-btn");
     const restoreBtn = e.target.closest(".restore-btn");
@@ -860,7 +1295,7 @@ document.addEventListener("click", async function (e) {
             showPage("memories");
         } catch (error) {
             console.error("Failed to create collection:", error);
-            alert("Couldn't create the collection. Is the backend running?");
+            showToast("Couldn't create the collection. Is the backend running?", "error");
         }
     }
 
@@ -880,7 +1315,7 @@ document.addEventListener("click", async function (e) {
             refreshCurrentPage();
         } catch (error) {
             console.error("Failed to move memory to trash:", error);
-            alert("Couldn't move that memory to trash. Is the backend running?");
+            showToast("Moved to Trash failed - is the backend running?", "error");
         }
     }
 
@@ -897,13 +1332,13 @@ document.addEventListener("click", async function (e) {
             refreshCurrentPage();
         } catch (error) {
             console.error("Failed to restore memory:", error);
-            alert("Couldn't restore that memory. Is the backend running?");
+            showToast("Couldn't restore that memory. Is the backend running?", "error");
         }
     }
 
     if (deleteBtn) {
         const id = deleteBtn.dataset.id;
-        const confirmed = confirm("Permanently delete this memory? This cannot be undone.");
+        const confirmed = await showConfirm("Permanently delete this memory? This cannot be undone.", { title: "Delete forever", confirmLabel: "Delete", danger: true });
         if (!confirmed) return;
         try {
             const res = await fetchWithAuth(`${API_BASE}/memories/${id}`, { method: "DELETE" });
@@ -914,7 +1349,7 @@ document.addEventListener("click", async function (e) {
             updateStorageUsage();
         } catch (error) {
             console.error("Failed to permanently delete memory:", error);
-            alert("Couldn't permanently delete that memory. Is the backend running?");
+            showToast("Couldn't permanently delete that memory. Is the backend running?", "error");
         }
     }
 });
@@ -929,7 +1364,7 @@ if (restoreAllBtn) {
     restoreAllBtn.addEventListener("click", async function () {
         const items = trashedMemories.filter(Boolean);
         if (items.length === 0) return;
-        if (!confirm(`Restore all ${items.length} item${items.length === 1 ? "" : "s"} from trash?`)) return;
+        if (!(await showConfirm(`Restore all ${items.length} item${items.length === 1 ? "" : "s"} from trash?`, { title: "Restore all", confirmLabel: "Restore" }))) return;
 
         restoreAllBtn.disabled = true;
         try {
@@ -944,7 +1379,7 @@ if (restoreAllBtn) {
             updateStorageUsage();
         } catch (error) {
             console.error("Failed to restore all:", error);
-            alert("Couldn't restore everything. Is the backend running?");
+            showToast("Couldn't restore everything. Is the backend running?", "error");
         } finally {
             restoreAllBtn.disabled = false;
         }
@@ -955,7 +1390,7 @@ if (emptyTrashBtn) {
     emptyTrashBtn.addEventListener("click", async function () {
         const items = trashedMemories.filter(Boolean);
         if (items.length === 0) return;
-        if (!confirm(`Permanently delete all ${items.length} item${items.length === 1 ? "" : "s"} in trash? This cannot be undone.`)) return;
+        if (!(await showConfirm(`Permanently delete all ${items.length} item${items.length === 1 ? "" : "s"} in trash? This cannot be undone.`, { title: "Empty trash", confirmLabel: "Delete all", danger: true }))) return;
 
         emptyTrashBtn.disabled = true;
         try {
@@ -967,7 +1402,7 @@ if (emptyTrashBtn) {
             updateStorageUsage();
         } catch (error) {
             console.error("Failed to empty trash:", error);
-            alert("Couldn't empty the trash. Is the backend running?");
+            showToast("Couldn't empty the trash. Is the backend running?", "error");
         } finally {
             emptyTrashBtn.disabled = false;
         }
@@ -1116,7 +1551,7 @@ async function uploadFile(file) {
     } = await sbClient.auth.getUser();
 
     if (!user) {
-        alert("Please log in first.");
+        showToast("Please log in first.", "error");
         return;
     }
     const formData = new FormData();
@@ -1146,7 +1581,7 @@ async function uploadFile(file) {
         startPolling();
     } catch (error) {
         console.error("Upload failed:", error);
-        alert("Upload failed: " + error.message);
+        showToast("Upload failed: " + error.message, "error");
     }
 }
 
@@ -1179,17 +1614,23 @@ dropZone.addEventListener("drop", function (event) {
 const imageLightbox = document.getElementById("imageLightbox");
 const lightboxImg = document.getElementById("lightboxImg");
 const lightboxPdf = document.getElementById("lightboxPdf");
+const lightboxOffice = document.getElementById("lightboxOffice");
+const lightboxOfficeInner = document.getElementById("lightboxOfficeInner");
 const lightboxClose = document.getElementById("lightboxClose");
 
 function openLightbox(src, kind) {
+    lightboxImg.style.display = "none";
+    lightboxPdf.style.display = "none";
+    lightboxOffice.style.display = "none";
+
     if (kind === "pdf") {
         lightboxPdf.src = src;
         lightboxPdf.style.display = "block";
-        lightboxImg.style.display = "none";
+    } else if (kind === "office") {
+        lightboxOffice.style.display = "block";
     } else {
         lightboxImg.src = src;
         lightboxImg.style.display = "block";
-        lightboxPdf.style.display = "none";
     }
     imageLightbox.classList.add("visible");
 }
@@ -1198,6 +1639,40 @@ function closeLightbox() {
     imageLightbox.classList.remove("visible");
     lightboxImg.src = "";
     lightboxPdf.src = ""; // stop the PDF viewer from staying loaded in the background
+    lightboxOfficeInner.innerHTML = "";
+}
+
+// Renders a .docx (via mammoth.js) or .xlsx/.xls (via SheetJS) file straight
+// in the browser, instead of forcing a download - fetches the raw file,
+// hands the bytes to whichever library matches the extension.
+async function openOfficePreview(url, ext) {
+    openLightbox(null, "office");
+    lightboxOfficeInner.innerHTML = `<div class="lightbox-office-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading preview...</div>`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+        const arrayBuffer = await response.arrayBuffer();
+
+        if (ext === "docx") {
+            if (typeof mammoth === "undefined") throw new Error("Preview library didn't load");
+            const result = await mammoth.convertToHtml({ arrayBuffer });
+            lightboxOfficeInner.innerHTML = result.value || "<p>This document appears to be empty.</p>";
+        } else {
+            // xlsx / xls
+            if (typeof XLSX === "undefined") throw new Error("Preview library didn't load");
+            const workbook = XLSX.read(arrayBuffer, { type: "array" });
+            let html = "";
+            workbook.SheetNames.forEach(name => {
+                html += `<div class="sheet-title">${name}</div>`;
+                html += XLSX.utils.sheet_to_html(workbook.Sheets[name], { editable: false });
+            });
+            lightboxOfficeInner.innerHTML = html || "<p>This spreadsheet appears to be empty.</p>";
+        }
+    } catch (error) {
+        console.error("Office preview failed:", error);
+        lightboxOfficeInner.innerHTML = `<p>Couldn't preview this file (${error.message}). Try the download button instead.</p>`;
+        showToast("Couldn't preview that file - try downloading it instead.", "error");
+    }
 }
 
 document.addEventListener("click", function (e) {
@@ -1209,6 +1684,11 @@ document.addEventListener("click", function (e) {
     const previewPdf = e.target.closest(".preview-pdf");
     if (previewPdf) {
         openLightbox(previewPdf.dataset.fullsrc, "pdf");
+        return;
+    }
+    const previewOffice = e.target.closest(".preview-office");
+    if (previewOffice) {
+        openOfficePreview(previewOffice.dataset.fullsrc, previewOffice.dataset.ext);
     }
 });
 
@@ -1309,7 +1789,7 @@ async function openProfileModal() {
 
     const { data: { user } } = await sbClient.auth.getUser();
     if (!user) {
-        alert("Please log in first.");
+        showToast("Please log in first.", "error");
         return;
     }
 
@@ -1423,4 +1903,153 @@ profileModalLogout.addEventListener("click", async function () {
     window.location.href = "login.html";
 });
 
+/* =========================================================
+   ONBOARDING TOUR
+   A quick, 4-step spotlight walkthrough shown once per account
+   on their very first visit - never again after that, and never
+   shown mid-session if they've already seen it on this device.
+========================================================= */
+const ONBOARDING_STEPS = [
+    {
+        target: "#uploadBtn",
+        title: "Add your first memory",
+        text: "Upload anything - screenshots, PDFs, voice notes, docs - and OrganAIz automatically titles, summarizes, and tags it for you.",
+        needsSidebar: true
+    },
+    {
+        target: "#profileBtn",
+        title: "Make it yours",
+        text: "Click your avatar any time to change your display name or profile photo.",
+        needsSidebar: false
+    },
+    {
+        target: "#searchInput",
+        title: "Search in plain language",
+        text: "No need for exact keywords - just describe what you're looking for, like \"that recipe I saved last week.\"",
+        needsSidebar: false
+    },
+    {
+        target: ".sidebar .menu",
+        title: "Everything, one click away",
+        text: "Jump between Memories, Collections, and Trash from here - plus your Images, Audio, and Documents further down.",
+        needsSidebar: true
+    }
+];
+
+const onboardingBackdrop = document.getElementById("onboardingBackdrop");
+const onboardingSpotlight = document.getElementById("onboardingSpotlight");
+const onboardingTooltip = document.getElementById("onboardingTooltip");
+const onboardingTooltipTitle = document.getElementById("onboardingTooltipTitle");
+const onboardingTooltipText = document.getElementById("onboardingTooltipText");
+const onboardingStepCount = document.getElementById("onboardingStepCount");
+const onboardingNextBtn = document.getElementById("onboardingNextBtn");
+const onboardingSkipBtn = document.getElementById("onboardingSkipBtn");
+
+let onboardingIndex = 0;
+let onboardingSeenKey = null;
+
+function isMobileLayout() {
+    return window.matchMedia("(max-width: 768px)").matches;
+}
+
+function getOnboardingSeenKey(userId) {
+    return `organaiz-onboarding-seen-${userId || "anon"}`;
+}
+
+// Called once on every dashboard load - it's a no-op for anyone who has
+// already completed or skipped the tour on this device.
+async function maybeStartOnboardingTour() {
+    if (!onboardingBackdrop) return;
+    try {
+        const { data: { user } } = await sbClient.auth.getUser();
+        if (!user) return;
+        const key = getOnboardingSeenKey(user.id);
+        if (localStorage.getItem(key)) return;
+
+        // Give the dashboard a moment to finish laying out real content
+        // (cards, counts, etc.) before measuring anything's position.
+        setTimeout(() => startOnboardingTour(key), 700);
+    } catch (error) {
+        console.error("Couldn't check onboarding status:", error);
+    }
+}
+
+function startOnboardingTour(seenKey) {
+    onboardingSeenKey = seenKey;
+    onboardingIndex = 0;
+    onboardingBackdrop.classList.add("visible");
+    showOnboardingStep();
+}
+
+function showOnboardingStep() {
+    const step = ONBOARDING_STEPS[onboardingIndex];
+    if (!step) { endOnboardingTour(); return; }
+
+    if (isMobileLayout()) {
+        if (step.needsSidebar) openSidebar(); else closeSidebar();
+    }
+
+    // Let the sidebar drawer's slide animation finish before measuring
+    setTimeout(() => positionOnboardingStep(step), isMobileLayout() ? 320 : 0);
+}
+
+function positionOnboardingStep(step) {
+    const target = document.querySelector(step.target);
+    if (!target) { onboardingIndex++; showOnboardingStep(); return; }
+
+    const rect = target.getBoundingClientRect();
+    const pad = 8;
+    onboardingSpotlight.style.top = `${rect.top - pad}px`;
+    onboardingSpotlight.style.left = `${rect.left - pad}px`;
+    onboardingSpotlight.style.width = `${rect.width + pad * 2}px`;
+    onboardingSpotlight.style.height = `${rect.height + pad * 2}px`;
+
+    onboardingTooltipTitle.textContent = step.title;
+    onboardingTooltipText.textContent = step.text;
+    onboardingStepCount.textContent = `${onboardingIndex + 1} / ${ONBOARDING_STEPS.length}`;
+    onboardingNextBtn.textContent = onboardingIndex === ONBOARDING_STEPS.length - 1 ? "Got it" : "Next";
+
+    // Measure the tooltip's own size first, then decide which side of the
+    // target it fits best on without spilling off the edge of the screen.
+    onboardingTooltip.style.visibility = "hidden";
+    onboardingTooltip.style.display = "block";
+    const tw = onboardingTooltip.offsetWidth;
+    const th = onboardingTooltip.offsetHeight;
+
+    let top = rect.bottom + 18;
+    if (top + th > window.innerHeight - 20) top = Math.max(20, rect.top - th - 18);
+
+    let left = rect.left;
+    if (left + tw > window.innerWidth - 20) left = window.innerWidth - tw - 20;
+    if (left < 20) left = 20;
+
+    onboardingTooltip.style.top = `${top}px`;
+    onboardingTooltip.style.left = `${left}px`;
+    onboardingTooltip.style.visibility = "visible";
+}
+
+function endOnboardingTour() {
+    onboardingBackdrop.classList.remove("visible");
+    onboardingTooltip.style.display = "none";
+    if (isMobileLayout()) closeSidebar();
+    if (onboardingSeenKey) localStorage.setItem(onboardingSeenKey, "1");
+    onboardingSeenKey = null;
+}
+
+if (onboardingNextBtn) {
+    onboardingNextBtn.addEventListener("click", () => {
+        onboardingIndex++;
+        showOnboardingStep();
+    });
+}
+if (onboardingSkipBtn) {
+    onboardingSkipBtn.addEventListener("click", endOnboardingTour);
+}
+window.addEventListener("resize", () => {
+    if (onboardingBackdrop && onboardingBackdrop.classList.contains("visible")) {
+        positionOnboardingStep(ONBOARDING_STEPS[onboardingIndex]);
+    }
+});
+
 applyProfileToPage();
+maybeStartOnboardingTour();

@@ -7,6 +7,7 @@
     <meta name="description" content="OrganAIz is the AI-powered memory organizer that turns every screenshot, voice note, and PDF you save into something you can actually find again.">
 
     <title>OrganAIz — Capture Everything. Forget Nothing.</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI0M0QjVGRCIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzdDM0FFRCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxnIGZpbGw9InVybCgjZykiPjxwYXRoIGQ9Ik0zMCA4Yy0zLjUgMC02LjUgMi04IDVjLTQgLjMtNyAzLjctNyA3LjhjMCAxLjcuNSAzLjIgMS40IDQuNWMtMS43IDEuNi0yLjcgMy44LTIuNyA2LjNjMCAzLjkgMi42IDcuMiA2LjIgOC4yYy40IDMuOCAzLjYgNi43IDcuNSA2LjdoMi42VjE1YzAtMy45LTMuMS03LTctN3oiLz48cGF0aCBkPSJNMzQgOGMzLjUgMCA2LjUgMiA4IDVjNCAuMyA3IDMuNyA3IDcuOGMwIDEuNy0uNSAzLjItMS40IDQuNWMxLjcgMS42IDIuNyAzLjggMi43IDYuM2MwIDMuOS0yLjYgNy4yLTYuMiA4LjJjLS40IDMuOC0zLjYgNi43LTcuNSA2LjdoLTIuNlYxNWMwLTMuOSAzLjEtNyA3LTd6Ii8+PC9nPjxjaXJjbGUgY3g9IjIyIiBjeT0iMTgiIHI9IjEuOCIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iLjUiLz48Y2lyY2xlIGN4PSI0MiIgY3k9IjE4IiByPSIxLjgiIGZpbGw9IiNmZmYiIG9wYWNpdHk9Ii41Ii8+PC9zdmc+">
 
     <link rel="stylesheet" href="landing.css">
 
@@ -401,9 +402,8 @@
                 </div>
 
                 <div class="compare-table-wrap reveal">
-                    <div class="compare-highlight" aria-hidden="true">
-                        <span class="winner-badge"><i class="fa-solid fa-crown"></i> Best Choice</span>
-                    </div>
+                    <div class="compare-highlight" aria-hidden="true"></div>
+                    <span class="winner-badge"><i class="fa-solid fa-crown"></i> Best Choice</span>
 
                     <div class="compare-table">
                         <div class="compare-row compare-head">
@@ -476,6 +476,27 @@
                         <div class="score-track"><div class="score-fill fill-lose"></div></div>
                         <span class="score-val">1 / 10</span>
                     </div>
+                </div>
+
+                <!-- KNOW MORE ABOUT ORGANAIZ (scrollable report) -->
+                <div class="chapter-head sub reveal">
+                    <span class="eyebrow center"><i class="fa-solid fa-book-open"></i> Know more about OrganAIz</span>
+                    <h3 class="section-title">The full story, in one scroll.</h3>
+                </div>
+
+                <div class="report-viewer reveal">
+                    <div class="report-viewer-frame">
+                        <div class="report-viewer-scroll" id="reportScroll">
+                            <div class="report-viewer-loading" id="reportLoading">
+                                <i class="fa-solid fa-circle-notch fa-spin"></i> Loading the report...
+                            </div>
+                        </div>
+                        <div class="report-fade-top"></div>
+                        <div class="report-fade-bottom"></div>
+                    </div>
+                    <a class="report-download-link" href="assets/OrganAIz-Competitive-Landscape-Report.pdf" target="_blank" rel="noopener">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open the full report
+                    </a>
                 </div>
 
                 <!-- HOW IT WORKS -->
@@ -668,8 +689,10 @@
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="landing.js"></script>
     <script src="landing-fx.js"></script>
+    <script src="report-viewer.js"></script>
 </body>
 
 </html>

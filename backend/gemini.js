@@ -1,6 +1,7 @@
 require("dotenv").config();
 const fs = require("fs");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const officeParser = require("officeparser");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -15,6 +16,7 @@ The uploaded file may be:
 - an image or screenshot
 - a PDF document
 - a voice recording
+- a Word document, Excel spreadsheet, or PowerPoint presentation
 - another supported file
 
 Your job is to understand the content of the uploaded file and generate useful metadata so the user can easily search, organize, and recall it later.
@@ -40,6 +42,9 @@ Summary:
 - If it's a voice recording, summarize what was said.
 - If it's a PDF, summarize the document.
 - If it's an image, describe the important visual information.
+- If it's a Word document, summarize the key points of the text.
+- If it's an Excel spreadsheet, describe what the data/sheet is about (not every row).
+- If it's a PowerPoint presentation, summarize what the deck covers.
 
 Tags:
 - Return 3-5 highly relevant keywords.
@@ -87,6 +92,20 @@ Important:
 function imageToBase64(filePath) {
   const fileBuffer = fs.readFileSync(filePath);
   return fileBuffer.toString("base64");
+}
+
+// Word/Excel/PowerPoint (and their older/legacy or OpenDocument equivalents)
+// aren't a format Gemini can read directly like an image or PDF - we have to
+// pull the text out ourselves first and send that instead.
+const OFFICE_EXT = /\.(docx?|xlsx?|pptx?|odt|ods|odp)$/i;
+const PLAIN_TEXT_EXT = /\.(txt|csv|rtf)$/i;
+
+async function extractTextFromFile(filePath) {
+  if (PLAIN_TEXT_EXT.test(filePath)) {
+    return fs.readFileSync(filePath, "utf8");
+  }
+  // officeParser handles .doc/.docx/.xls/.xlsx/.ppt/.pptx/.odt/.ods/.odp
+  return await officeParser.parseOfficeAsync(filePath);
 }
 
 function getMimeType(filePath) {
@@ -148,17 +167,38 @@ function normalizeCollection(collectionName, existingCollections) {
 
 async function analyzeFile(filePath, existingCollections = [], retries = 2) {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-  const imageBase64 = imageToBase64(filePath);
-  const mimeType = getMimeType(filePath);
   const prompt = buildPrompt(existingCollections);
+
+  let requestContent;
+
+  if (OFFICE_EXT.test(filePath) || PLAIN_TEXT_EXT.test(filePath)) {
+    // Word/Excel/PowerPoint/txt/csv: extract the text ourselves, then send
+    // it to Gemini as plain text instead of inline media.
+    let extractedText;
+    try {
+      extractedText = await extractTextFromFile(filePath);
+    } catch (error) {
+      throw new Error(`Could not read this document to analyze it: ${error.message}`);
+    }
+
+    // Gemini doesn't need (and shouldn't be sent) an entire huge spreadsheet
+    // or deck just to produce a title/summary/tags - cap it generously.
+    const trimmedText = (extractedText || "").slice(0, 20000);
+    requestContent = [
+      `${prompt}\n\nHere is the extracted text content of the uploaded file:\n"""\n${trimmedText}\n"""`
+    ];
+  } else {
+    const imageBase64 = imageToBase64(filePath);
+    const mimeType = getMimeType(filePath);
+    requestContent = [
+      { inlineData: { data: imageBase64, mimeType: mimeType } },
+      prompt
+    ];
+  }
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const result = await model.generateContent([
-        { inlineData: { data: imageBase64, mimeType: mimeType } },
-        prompt
-      ]);
+      const result = await model.generateContent(requestContent);
 
       let rawText = result.response.text();
       rawText = rawText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
