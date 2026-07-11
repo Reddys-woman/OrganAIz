@@ -1837,6 +1837,42 @@ html.has-fine-pointer button{
     scroll-margin-top:90px;
 }
 
+/* ---- GitHub + Social links (after the features grid) ---- */
+.feature-links-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:24px;
+    margin-top:44px;
+}
+
+.feature-links-row .code-tag{
+    font-family:monospace;
+    opacity:.85;
+    margin-left:2px;
+}
+
+.feature-social-link{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--text-secondary);
+    text-decoration:none;
+    transition:.2s;
+}
+
+.feature-social-link i{
+    font-size:17px;
+    color:var(--accent);
+}
+
+.feature-social-link:hover{
+    color:var(--accent);
+}
+
 /* ---- Report viewer (Know more about OrganAIz) ---- */
 .report-viewer{
     max-width:820px;
