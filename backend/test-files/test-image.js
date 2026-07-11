@@ -28,7 +28,7 @@ function imageToBase64(filePath) {
 
 async function run() {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
     const imageBase64 = imageToBase64("uploads/wfyi9o8jqwa11.jpg");
 
