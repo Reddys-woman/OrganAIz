@@ -7,7 +7,6 @@ it** — all on a free tier, from the very first upload.
 
 Built at **NYC CodeQuest Hackathon 2026** by **Team Code Catalyst**.
 
-🔗 **Live demo:** _add your deployed link here_
 📄 **Competitive landscape report:** [OrganAIz-Competitive-Landscape-Report (1).pdf](https://github.com/user-attachments/files/29926046/OrganAIz-Competitive-Landscape-Report.1.pdf)
 
 
@@ -47,8 +46,7 @@ Built at **NYC CodeQuest Hackathon 2026** by **Team Code Catalyst**.
 | Backend        | Node.js, Express                                        |
 | Database/Auth  | Supabase (PostgreSQL + Auth)                            |
 | AI             | Google Gemini API (`@google/generative-ai`)             |
-| Libraries and  | Multer, Three.js, Font Awesome PDF.js                   |
-| Other          | 
+| Libraries and other other| Multer, Three.js, Font Awesome PDF.js                   | 
 ---
 
 ## 📂 Project Structure
@@ -71,6 +69,9 @@ OrganAIz/
 
 ---
 
+## You could directly preview Our project using this link: https://organaiz.netlify.app/
+
+Or else you can set up via the instructions given below:
 ## 🚀 Getting Started
 
 ### 1. Clone the repo
@@ -142,6 +143,7 @@ npx serve .
 | **Prakamya Pandey** — Social Media Manager | [GitHub](https://github.com/prakamyapandey7178-hash) · [LinkedIn](https://www.linkedin.com/in/prakamya-pandey-a7148a412) | India |
 
 📸 Instagram: [@_.codecatalyst._](https://www.instagram.com/_.codecatalyst._/)
+📸 Youtube: [@codecatalyst-l9](https://youtube.com/@codecatalyst-l9?si=9ahtv91NunZfsYxM)
 
 ---
 
@@ -150,7 +152,7 @@ npx serve .
 - [ ] Video support
 - [ ] Cross-format linking between related memories
 - [ ] Mobile app
-
+- [ ] Project to a Real Product
 ---
 
 ## 📄 License
