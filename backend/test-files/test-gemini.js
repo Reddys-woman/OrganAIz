@@ -10,7 +10,7 @@ const genAI = new GoogleGenerativeAI(key);
 
 async function run() {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     const result = await model.generateContent("Say hello in one short sentence.");
     console.log("Gemini replied:", result.response.text());
   } catch (error) {
