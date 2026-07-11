@@ -5,10 +5,11 @@ note, or a document, and OrganAIz automatically **titles it, summarizes it,
 tags it, sorts it into a collection, and flags any deadlines hiding inside
 it** — all on a free tier, from the very first upload.
 
-Built at **Hackathon 2026** by **Team Code Catalyst**.
+Built at **NYC CodeQuest Hackathon 2026** by **Team Code Catalyst**.
 
 🔗 **Live demo:** _add your deployed link here_
-📄 **Competitive landscape report:** available inside the app, or in `/docs`
+📄 **Competitive landscape report:** [OrganAIz-Competitive-Landscape-Report (1).pdf](https://github.com/user-attachments/files/29926046/OrganAIz-Competitive-Landscape-Report.1.pdf)
+
 
 ---
 
@@ -46,8 +47,8 @@ Built at **Hackathon 2026** by **Team Code Catalyst**.
 | Backend        | Node.js, Express                                        |
 | Database/Auth  | Supabase (PostgreSQL + Auth)                            |
 | AI             | Google Gemini API (`@google/generative-ai`)             |
-| File uploads   | Multer                                                   |
-
+| Libraries and  | Multer, Three.js, Font Awesome PDF.js                   |
+| Other          | 
 ---
 
 ## 📂 Project Structure
@@ -137,11 +138,10 @@ npx serve .
 | | | |
 |---|---|---|
 | **Shruti Sharma** — Founder & Lead Frontend Developer | [GitHub](https://github.com/Reddys-woman) · [LinkedIn](https://www.linkedin.com/in/shruti-sharma-8889132a3/) | Delhi, India |
-| **Yamini Gupta** — Founder & Lead Backend Developer | [GitHub](https://github.com/NeuralWhirl) · [LinkedIn](https://www.linkedin.com/in/yamini-gupta-6a9077373/) | Karnataka, India |
+| **Neural Whirl** — Founder & Lead Backend Developer | [GitHub](https://github.com/NeuralWhirl) · [LinkedIn](https://www.linkedin.com/in/yamini-gupta-6a9077373/) | Karnataka, India |
 | **Prakamya Pandey** — Social Media Manager | [GitHub](https://github.com/prakamyapandey7178-hash) · [LinkedIn](https://www.linkedin.com/in/prakamya-pandey-a7148a412) | India |
 
 📸 Instagram: [@_.codecatalyst._](https://www.instagram.com/_.codecatalyst._/)
-💬 Discord: [Join our server](https://discord.gg/9MyDmCs7Mv)
 
 ---
 
@@ -155,4 +155,4 @@ npx serve .
 
 ## 📄 License
 
-_Add a license here (e.g. MIT) if you want others to be able to use this code._
+MIT
