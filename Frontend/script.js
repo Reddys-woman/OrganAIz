@@ -178,6 +178,214 @@ async function fetchWithAuth(url, options = {}) {
 }
 
 /* =========================================================
+   MEMORY DETAILS MODAL
+   Opens a clean panel with title, description, tags,
+   collection selector, and small edit (pen) buttons.
+========================================================= */
+const memoryDetailsBackdrop = document.getElementById("memoryDetailsBackdrop");
+const memoryDetailsClose = document.getElementById("memoryDetailsClose");
+let currentDetailsMemoryId = null;
+
+function closeMemoryDetails() {
+    if (!memoryDetailsBackdrop) return;
+    memoryDetailsBackdrop.classList.remove("visible");
+    currentDetailsMemoryId = null;
+    document.body.style.overflow = "";
+}
+
+function openMemoryDetails(id) {
+    // Look in active memories first, then trash
+    let memory = memories.find(m => m && String(m.id) === String(id));
+    let fromTrash = false;
+    if (!memory) {
+        memory = trashedMemories.find(m => m && String(m.id) === String(id));
+        fromTrash = !!memory;
+    }
+    if (!memory || !memoryDetailsBackdrop) return;
+
+    currentDetailsMemoryId = String(id);
+    memoryDetailsBackdrop.dataset.fromTrash = fromTrash ? "1" : "0";
+
+    const titleEl = document.getElementById("memoryDetailsTitle");
+    const tagEl = document.getElementById("memoryDetailsTag");
+    const summaryEl = document.getElementById("memoryDetailsSummary");
+    const tagsTextEl = document.getElementById("memoryDetailsTagsText");
+    const dateEl = document.getElementById("memoryDetailsDate");
+    const collectionSelect = document.getElementById("memoryDetailsCollection");
+
+    if (titleEl) titleEl.textContent = memory.title || "Untitled";
+    if (tagEl) {
+        const tagText = memory.tags && memory.tags.length > 0 ? memory.tags[0] : (memory.collection || "General");
+        tagEl.textContent = tagText;
+    }
+    if (summaryEl) {
+        summaryEl.textContent = memory.summary || "No description yet.";
+    }
+    if (tagsTextEl) {
+        tagsTextEl.textContent = (memory.tags && memory.tags.length)
+            ? memory.tags.join(", ")
+            : "No tags";
+    }
+    if (dateEl) {
+        const span = dateEl.querySelector("span");
+        if (span) span.textContent = memory.created_at ? formatTime(memory.created_at) : "just now";
+    }
+    if (collectionSelect) {
+        collectionSelect.innerHTML = buildCollectionOptions(memory.collection);
+        collectionSelect.dataset.id = memory.id;
+        collectionSelect.dataset.previousValue = memory.collection || "";
+        collectionSelect.disabled = fromTrash;
+    }
+
+    const downloadLink = document.getElementById("memoryDetailsDownload");
+    if (downloadLink) {
+        const fileUrl = `${API_BASE}/uploads/${memory.filename || ""}`;
+        downloadLink.href = fileUrl;
+        downloadLink.setAttribute("download", memory.filename || "download");
+    }
+
+    // Swap action buttons depending on whether this is a trash item
+    const editBtn = document.getElementById("memoryDetailsEditAll");
+    const deleteBtn = document.getElementById("memoryDetailsDelete");
+    const restoreBtn = document.getElementById("memoryDetailsRestore");
+    if (editBtn) editBtn.style.display = fromTrash ? "none" : "";
+    if (deleteBtn) {
+        deleteBtn.style.display = fromTrash ? "" : "";
+        deleteBtn.innerHTML = fromTrash
+            ? `<i class="fa-solid fa-trash-can"></i> Delete forever`
+            : `<i class="fa-solid fa-trash"></i> Delete`;
+    }
+    if (restoreBtn) restoreBtn.style.display = fromTrash ? "" : "none";
+
+    memoryDetailsBackdrop.classList.add("visible");
+    document.body.style.overflow = "hidden";
+}
+
+if (memoryDetailsClose) memoryDetailsClose.addEventListener("click", closeMemoryDetails);
+if (memoryDetailsBackdrop) {
+    memoryDetailsBackdrop.addEventListener("click", (e) => {
+        if (e.target === memoryDetailsBackdrop) closeMemoryDetails();
+    });
+}
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && memoryDetailsBackdrop && memoryDetailsBackdrop.classList.contains("visible")) {
+        closeMemoryDetails();
+    }
+});
+
+// Single "Edit" button opens one form for title, description, and tags
+document.getElementById("memoryDetailsEditAll")?.addEventListener("click", async () => {
+    if (!currentDetailsMemoryId) return;
+    const memory = memories.find(m => m && String(m.id) === currentDetailsMemoryId);
+    if (!memory) return;
+    const editId = memory.id;
+    // One window at a time: close info, open edit, then return to info after save
+    closeMemoryDetails();
+    const result = await showFormModal({
+        title: "Edit memory",
+        fields: [
+            { name: "title", label: "Title", type: "text", value: memory.title || "", required: true },
+            { name: "summary", label: "Description", type: "textarea", value: memory.summary || "", rows: 4 },
+            { name: "tags", label: "Tags", type: "tags", value: (memory.tags || []).join(", ") }
+        ],
+        confirmLabel: "Save"
+    });
+    if (!result) {
+        openMemoryDetails(editId);
+        return;
+    }
+    try {
+        const res = await fetchWithAuth(`${API_BASE}/memories/${memory.id}/details`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                title: result.title,
+                summary: result.summary,
+                tags: result.tags
+            })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || "Server rejected the request");
+        memory.title = data.memory.title;
+        memory.summary = data.memory.summary;
+        memory.tags = data.memory.tags;
+        refreshCurrentPage();
+        openMemoryDetails(editId);
+        showToast("Memory updated.", "success", 2200);
+    } catch (error) {
+        console.error("Failed to update memory:", error);
+        showToast("Couldn't update the memory.", "error");
+        openMemoryDetails(editId);
+    }
+});
+
+/* Collection select inside the details modal is handled by the
+   global .collection-select change listener further below. */
+
+document.getElementById("memoryDetailsDelete")?.addEventListener("click", async () => {
+    if (!currentDetailsMemoryId) return;
+    const id = currentDetailsMemoryId;
+    const fromTrash = memoryDetailsBackdrop?.dataset.fromTrash === "1";
+
+    // Close info window first so only the confirm dialog is on screen
+    closeMemoryDetails();
+
+    if (fromTrash) {
+        const confirmed = await showConfirm("Permanently delete this memory? This cannot be undone.", { title: "Delete forever", confirmLabel: "Delete", danger: true });
+        if (!confirmed) return;
+        try {
+            const res = await fetchWithAuth(`${API_BASE}/memories/${id}`, { method: "DELETE" });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || "Server rejected the request");
+            trashedMemories = trashedMemories.filter(m => m && String(m.id) !== String(id));
+            refreshCurrentPage();
+            showToast("Permanently deleted.", "success", 2200);
+        } catch (error) {
+            console.error("Failed to permanently delete memory:", error);
+            showToast("Couldn't permanently delete that memory.", "error");
+        }
+        return;
+    }
+
+    const confirmed = await showConfirm("Move this memory to Trash?", { title: "Move to Trash", confirmLabel: "Move to Trash", danger: true });
+    if (!confirmed) {
+        openMemoryDetails(id);
+        return;
+    }
+    try {
+        const res = await fetchWithAuth(`${API_BASE}/memories/${id}/trash`, { method: "PATCH" });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || "Server rejected the request");
+        memories = memories.filter(m => m && String(m.id) !== String(id));
+        refreshCurrentPage();
+        showToast("Moved to Trash.", "success", 2200);
+    } catch (error) {
+        console.error("Failed to move memory to trash:", error);
+        showToast("Moved to Trash failed - is the backend running?", "error");
+        openMemoryDetails(id);
+    }
+});
+
+document.getElementById("memoryDetailsRestore")?.addEventListener("click", async () => {
+    if (!currentDetailsMemoryId) return;
+    const id = currentDetailsMemoryId;
+    try {
+        const res = await fetchWithAuth(`${API_BASE}/memories/${id}/restore`, { method: "PATCH" });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || "Server rejected the request");
+        const restored = trashedMemories.find(m => m && String(m.id) === String(id));
+        trashedMemories = trashedMemories.filter(m => m && String(m.id) !== String(id));
+        if (restored) memories.unshift(restored);
+        closeMemoryDetails();
+        refreshCurrentPage();
+        showToast("Restored.", "success");
+    } catch (error) {
+        console.error("Failed to restore memory:", error);
+        showToast("Couldn't restore that memory.", "error");
+    }
+});
+
+/* =========================================================
    ELEMENT REFERENCES
 ========================================================= */
 const uploadBtn = document.getElementById("uploadBtn");
@@ -476,21 +684,13 @@ function measureSummaryOverflow(container) {
 }
 
 document.addEventListener("click", function (e) {
-    const btn = e.target.closest(".read-more-btn");
-    if (!btn) return;
+    // Title → properties modal; "Read more" (desktop) also opens it
+    const detailsTarget = e.target.closest(".read-more-btn, .memory-title-link");
+    if (!detailsTarget) return;
     e.preventDefault();
     e.stopPropagation();
-    const wrap = btn.closest(".summary-wrap");
-    const expanded = wrap.classList.toggle("expanded");
-    btn.textContent = expanded ? "Read less" : "Read more";
-    // Remember this across re-renders (e.g. the background polling that
-    // refreshes cards while something else is still "Processing...") so
-    // expanding a summary doesn't get silently wiped out moments later.
-    const id = wrap.dataset.id;
-    if (id) {
-        if (expanded) expandedSummaryIds.add(id);
-        else expandedSummaryIds.delete(id);
-    }
+    const id = detailsTarget.dataset.id;
+    if (id) openMemoryDetails(id);
 }, true); // capture phase: run before any ancestor's own click handler can act on this click
 
 function createMemoryCard(memory, mode) {
@@ -504,32 +704,18 @@ function createMemoryCard(memory, mode) {
 
     const tagText = memory.tags && memory.tags.length > 0 ? memory.tags[0] : (memory.collection || "General");
 
+    // Icon-only restore / delete on the thumbnail — keeps mobile cards clean
     const trashActionsHtml = mode === "trash"
-        ? `<div class="memory-actions">
-             <button class="restore-btn" data-id="${memory.id}"><i class="fa-solid fa-rotate-left"></i> Restore</button>
-             <button class="delete-btn" data-id="${memory.id}"><i class="fa-solid fa-trash-can"></i> Delete Forever</button>
+        ? `<div class="trash-card-actions">
+             <button type="button" class="restore-btn" data-id="${memory.id}" title="Restore"><i class="fa-solid fa-rotate-left"></i></button>
+             <button type="button" class="delete-btn" data-id="${memory.id}" title="Delete forever"><i class="fa-solid fa-trash-can"></i></button>
            </div>`
         : "";
 
     const fileUrl = `${API_BASE}/uploads/${memory.filename || ""}`;
     const type = classifyType(memory);
 
-    // Every action that used to be its own floating icon (download, delete)
-    // now lives in one "..." dropdown, alongside editing the title/summary/tags.
-    const cardMenuHtml = mode === "normal"
-        ? `<div class="card-menu">
-             <button type="button" class="card-menu-btn" data-id="${memory.id}" title="More options">
-                 <i class="fa-solid fa-ellipsis-vertical"></i>
-             </button>
-             <div class="card-menu-dropdown">
-                 <button type="button" class="card-menu-item" data-action="edit-title" data-id="${memory.id}"><i class="fa-solid fa-pen"></i> Edit title</button>
-                 <button type="button" class="card-menu-item" data-action="edit-summary" data-id="${memory.id}"><i class="fa-solid fa-align-left"></i> Edit summary</button>
-                 <button type="button" class="card-menu-item" data-action="edit-tags" data-id="${memory.id}"><i class="fa-solid fa-tags"></i> Edit tags</button>
-                 <a class="card-menu-item" href="${fileUrl}" download="${memory.filename || ""}"><i class="fa-solid fa-download"></i> Download</a>
-                 <button type="button" class="card-menu-item danger" data-action="delete" data-id="${memory.id}"><i class="fa-solid fa-trash"></i> Delete</button>
-             </div>
-           </div>`
-        : "";
+    // Card actions (edit / download / delete) live in the Details modal.
 
     // Real, browser-decodable images get a clickable thumbnail + lightbox preview.
     // PDFs get a clickable tile that opens an inline PDF viewer in the lightbox.
@@ -541,21 +727,24 @@ function createMemoryCard(memory, mode) {
     if (type === "image" && isPreviewableImage(memory)) {
         mediaHtml = `<img src="${fileUrl}" class="preview-img" data-fullsrc="${fileUrl}" alt="${memory.title || "Memory image"}">`;
     } else if (type === "document" && isPreviewablePdf(memory)) {
-        mediaHtml = `<div class="file-icon-placeholder preview-pdf" data-fullsrc="${fileUrl}" title="Click to preview PDF">
+        mediaHtml = `<div class="file-icon-placeholder preview-pdf" data-fullsrc="${fileUrl}" title="Preview PDF">
                         <i class="fa-regular fa-file-pdf"></i>
-                        <span class="preview-hint"><i class="fa-solid fa-magnifying-glass"></i> Click to preview</span>
+                        <span class="preview-hint"><i class="fa-solid fa-magnifying-glass"></i> Preview</span>
                      </div>`;
     } else if (type === "audio") {
-        mediaHtml = `<div class="audio-preview">
-                        <i class="fa-solid fa-waveform-lines"></i>
-                        <audio controls preload="none" src="${fileUrl}"></audio>
+        // Opens the full audio player (seek / skip) — better for long recordings
+        const safeTitle = (memory.title || "Audio").replace(/"/g, "&quot;");
+        mediaHtml = `<div class="audio-preview audio-open-player" data-audio-src="${fileUrl}" data-audio-title="${safeTitle}">
+                        <button type="button" class="audio-play-btn" aria-label="Open audio player">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
                      </div>`;
     } else if (type === "document" && isPreviewableOfficeDoc(memory)) {
         const ext = getFileExtension(memory.filename);
         const isSheet = ext === "xlsx" || ext === "xls";
-        mediaHtml = `<div class="file-icon-placeholder preview-office" data-fullsrc="${fileUrl}" data-ext="${ext}" title="Click to preview">
+        mediaHtml = `<div class="file-icon-placeholder preview-office" data-fullsrc="${fileUrl}" data-ext="${ext}" title="Preview">
                         <i class="fa-solid ${isSheet ? "fa-file-excel" : "fa-file-word"}"></i>
-                        <span class="preview-hint"><i class="fa-solid fa-magnifying-glass"></i> Click to preview</span>
+                        <span class="preview-hint"><i class="fa-solid fa-magnifying-glass"></i> Preview</span>
                      </div>`;
     } else {
         const iconClass = type === "document" ? "fa-solid fa-file-lines"
@@ -572,23 +761,25 @@ function createMemoryCard(memory, mode) {
            </select>`
         : `<span><i class="fa-solid fa-folder"></i> ${memory.collection || "General"}</span>`;
 
+    // Card chrome is intentionally minimal: media + title.
+    // Tap media to preview; tap title to open properties (Details modal).
+    // Trash: restore/delete icons sit on the thumbnail.
+    if (mode === "trash") card.classList.add("is-trash");
     card.innerHTML = `
         <div class="memory-image-wrap">
             ${mediaHtml}
-            ${cardMenuHtml}
+            ${trashActionsHtml}
         </div>
         <div class="memory-content">
-            <span class="tag">${tagText}</span>
-            <h3>${memory.title || "Untitled"}</h3>
+            <h3 class="memory-title-link" data-id="${memory.id}">${memory.title || "Untitled"}</h3>
             <div class="summary-wrap${expandedSummaryIds.has(String(memory.id)) ? " expanded" : ""}" data-id="${memory.id}">
                 <p class="memory-summary">${memory.summary || ""}</p>
-                <button type="button" class="read-more-btn">${expandedSummaryIds.has(String(memory.id)) ? "Read less" : "Read more"}</button>
+                <button type="button" class="read-more-btn" data-id="${memory.id}">Read more</button>
             </div>
             <div class="memory-footer">
                 ${collectionFieldHtml}
                 <span><i class="fa-regular fa-calendar"></i> ${memory.created_at ? formatTime(memory.created_at) : "just now"}</span>
             </div>
-            ${trashActionsHtml}
         </div>
     `;
     return card;
@@ -1134,9 +1325,14 @@ document.addEventListener("click", function (e) {
     // Close any open menu first, unless we just clicked its own toggle button
     if (openDropdown && (!menuBtn || menuBtn.closest(".card-menu") !== openDropdown)) {
         openDropdown.classList.remove("open");
+        openDropdown.closest(".memory-card")?.classList.remove("menu-open");
     }
     if (menuBtn) {
-        menuBtn.closest(".card-menu").classList.toggle("open");
+        const menu = menuBtn.closest(".card-menu");
+        const card = menuBtn.closest(".memory-card");
+        const willOpen = !menu.classList.contains("open");
+        menu.classList.toggle("open");
+        if (card) card.classList.toggle("menu-open", willOpen);
     }
 });
 
@@ -1147,7 +1343,9 @@ document.addEventListener("click", async function (e) {
     const id = actionBtn.dataset.id;
     const memory = memories.find(m => m && m.id == id);
     if (!memory) return;
-    actionBtn.closest(".card-menu")?.classList.remove("open");
+    const menuEl = actionBtn.closest(".card-menu");
+    menuEl?.classList.remove("open");
+    menuEl?.closest(".memory-card")?.classList.remove("menu-open");
 
     if (actionBtn.dataset.action === "edit-title") {
         const result = await showFormModal({
@@ -1241,11 +1439,17 @@ document.addEventListener("click", async function (e) {
 // Close an open card menu on outside click or Escape
 document.addEventListener("click", function (e) {
     if (e.target.closest(".card-menu")) return;
-    document.querySelectorAll(".card-menu.open").forEach(el => el.classList.remove("open"));
+    document.querySelectorAll(".card-menu.open").forEach(el => {
+        el.classList.remove("open");
+        el.closest(".memory-card")?.classList.remove("menu-open");
+    });
 });
 document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
-        document.querySelectorAll(".card-menu.open").forEach(el => el.classList.remove("open"));
+        document.querySelectorAll(".card-menu.open").forEach(el => {
+            el.classList.remove("open");
+            el.closest(".memory-card")?.classList.remove("menu-open");
+        });
     }
 });
 
@@ -1257,7 +1461,28 @@ document.addEventListener("click", async function (e) {
     const reviewDupBtn = e.target.closest(".review-duplicate-btn");
     const viewDeadlineBtn = e.target.closest(".view-deadline-btn");
     const createCollectionBtn = e.target.closest(".create-collection-btn");
+    const markSeenBtn = e.target.closest(".mark-ai-seen-btn");
 
+    if (markSeenBtn) {
+        const key = markSeenBtn.dataset.seenKey;
+        if (key) {
+            markAIRecSeen(key);
+            const card = markSeenBtn.closest(".ai-card");
+            if (card) {
+                card.style.transition = "opacity .25s ease, transform .25s ease";
+                card.style.opacity = "0";
+                card.style.transform = "scale(0.96)";
+                setTimeout(() => {
+                    card.remove();
+                    const aiGrid = document.getElementById("aiGrid");
+                    const emptyMsg = aiGrid && aiGrid.parentElement.querySelector(".empty-message");
+                    if (emptyMsg) emptyMsg.classList.toggle("visible", aiGrid.children.length === 0);
+                }, 260);
+            }
+            showToast("Marked as seen.", "success", 2200);
+        }
+        return;
+    }
 
     if (reviewDupBtn) {
         idFilter = reviewDupBtn.dataset.ids.split(",").map(id => parseInt(id));
@@ -1321,6 +1546,7 @@ document.addEventListener("click", async function (e) {
 
 
     if (restoreBtn) {
+        e.stopPropagation();
         const id = restoreBtn.dataset.id;
         try {
             const res = await fetchWithAuth(`${API_BASE}/memories/${id}/restore`, { method: "PATCH" });
@@ -1330,6 +1556,7 @@ document.addEventListener("click", async function (e) {
             if (data.memory) memories.unshift(data.memory);
             renderTrashPage();
             refreshCurrentPage();
+            showToast("Restored.", "success", 2200);
         } catch (error) {
             console.error("Failed to restore memory:", error);
             showToast("Couldn't restore that memory. Is the backend running?", "error");
@@ -1337,6 +1564,7 @@ document.addEventListener("click", async function (e) {
     }
 
     if (deleteBtn) {
+        e.stopPropagation();
         const id = deleteBtn.dataset.id;
         const confirmed = await showConfirm("Permanently delete this memory? This cannot be undone.", { title: "Delete forever", confirmLabel: "Delete", danger: true });
         if (!confirmed) return;
@@ -1411,6 +1639,22 @@ if (emptyTrashBtn) {
 
 let isRenderingAI = false;
 
+const AI_SEEN_KEY = "organaiz-ai-seen";
+
+function getSeenAIRecs() {
+    try {
+        return new Set(JSON.parse(localStorage.getItem(AI_SEEN_KEY)) || []);
+    } catch {
+        return new Set();
+    }
+}
+
+function markAIRecSeen(key) {
+    const seen = getSeenAIRecs();
+    seen.add(key);
+    localStorage.setItem(AI_SEEN_KEY, JSON.stringify([...seen]));
+}
+
 async function renderAIRecommendations() {
     if (isRenderingAI) return;
     isRenderingAI = true;
@@ -1434,14 +1678,18 @@ async function renderAIRecommendations() {
         if (collectionResult.status === "rejected") console.error("Collection suggestions fetch failed:", collectionResult.reason);
 
         aiGrid.innerHTML = "";
+        const seen = getSeenAIRecs();
 
         const duplicateGroups = (dupData && dupData.success && dupData.duplicateGroups) || [];
         const deadlineMemories = (deadlineData && deadlineData.success && deadlineData.memories) || [];
         const collectionSuggestions = (collectionData && collectionData.success && collectionData.suggestions) || [];
 
         duplicateGroups.forEach(group => {
+            const key = `dup-${[group[0].id, group[1].id].sort().join("-")}`;
+            if (seen.has(key)) return;
             const card = document.createElement("div");
             card.className = "ai-card blue";
+            card.dataset.seenKey = key;
             card.innerHTML = `
                 <div class="ai-card-top">
                     <div class="ai-icon"><i class="fa-solid fa-clone"></i></div>
@@ -1451,17 +1699,21 @@ async function renderAIRecommendations() {
                 <p>"${group[0].title}" and "${group[1].title}" look similar. Review them?</p>
                 <div class="ai-card-actions">
                     <button class="review-duplicate-btn" data-ids="${group[0].id},${group[1].id}">Review</button>
+                    <button class="mark-ai-seen-btn" data-seen-key="${key}">Mark as seen</button>
                 </div>
             `;
             aiGrid.appendChild(card);
         });
 
         deadlineMemories.forEach(memory => {
+            const key = `deadline-${memory.id}`;
+            if (seen.has(key)) return;
             const daysUntil = Math.ceil((new Date(memory.deadline) - new Date()) / (1000 * 60 * 60 * 24));
             const dayText = daysUntil === 0 ? "today" : daysUntil === 1 ? "tomorrow" : `in ${daysUntil} days`;
 
             const card = document.createElement("div");
             card.className = "ai-card red";
+            card.dataset.seenKey = key;
             card.innerHTML = `
                 <div class="ai-card-top">
                     <div class="ai-icon"><i class="fa-solid fa-clock"></i></div>
@@ -1471,14 +1723,18 @@ async function renderAIRecommendations() {
                 <p>"${memory.title}" has a deadline on ${memory.deadline}.</p>
                 <div class="ai-card-actions">
                     <button class="view-deadline-btn" data-id="${memory.id}">View</button>
+                    <button class="mark-ai-seen-btn" data-seen-key="${key}">Mark as seen</button>
                 </div>
             `;
             aiGrid.appendChild(card);
         });
 
         collectionSuggestions.forEach(suggestion => {
+            const key = `coll-${suggestion.tag}`;
+            if (seen.has(key)) return;
             const card = document.createElement("div");
             card.className = "ai-card yellow";
+            card.dataset.seenKey = key;
             card.innerHTML = `
                 <div class="ai-card-top">
                     <div class="ai-icon"><i class="fa-solid fa-folder-plus"></i></div>
@@ -1489,6 +1745,7 @@ async function renderAIRecommendations() {
                 <div class="ai-card-actions">
                     <button class="create-collection-btn" data-ids="${suggestion.memoryIds.join(",")}" data-tag="${suggestion.tag}">Create Collection</button>
                     <button class="view-collection-suggestion-btn" data-ids="${suggestion.memoryIds.join(",")}">Just Review</button>
+                    <button class="mark-ai-seen-btn" data-seen-key="${key}">Mark as seen</button>
                 </div>
             `;
             aiGrid.appendChild(card);
@@ -1689,6 +1946,155 @@ document.addEventListener("click", function (e) {
     const previewOffice = e.target.closest(".preview-office");
     if (previewOffice) {
         openOfficePreview(previewOffice.dataset.fullsrc, previewOffice.dataset.ext);
+        return;
+    }
+
+    // Open full audio player (seek bar + skip) for long recordings
+    const audioOpen = e.target.closest(".audio-open-player, .audio-play-btn");
+    if (audioOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        const wrap = audioOpen.closest(".audio-preview") || audioOpen;
+        const src = wrap.dataset.audioSrc;
+        const title = wrap.dataset.audioTitle || "Audio";
+        if (src) openAudioPlayer(src, title);
+    }
+});
+
+/* =========================================================
+   FULL AUDIO PLAYER
+   Seek bar, time display, ±10s skip — works for long files.
+========================================================= */
+const audioPlayerBackdrop = document.getElementById("audioPlayerBackdrop");
+const audioPlayerEl = document.getElementById("audioPlayerElement");
+const audioPlayerSeek = document.getElementById("audioPlayerSeek");
+const audioPlayerCurrent = document.getElementById("audioPlayerCurrent");
+const audioPlayerDuration = document.getElementById("audioPlayerDuration");
+const audioPlayerPlayBtn = document.getElementById("audioPlayerPlay");
+const audioPlayerPlayIcon = document.getElementById("audioPlayerPlayIcon");
+const audioPlayerTitle = document.getElementById("audioPlayerTitle");
+const audioPlayerClose = document.getElementById("audioPlayerClose");
+let audioSeeking = false;
+
+function formatAudioTime(sec) {
+    if (!isFinite(sec) || sec < 0) return "0:00";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function updateAudioPlayIcon(playing) {
+    if (!audioPlayerPlayIcon || !audioPlayerPlayBtn) return;
+    audioPlayerPlayIcon.className = playing ? "fa-solid fa-pause" : "fa-solid fa-play";
+    audioPlayerPlayBtn.classList.toggle("playing", playing);
+}
+
+function openAudioPlayer(src, title) {
+    if (!audioPlayerBackdrop || !audioPlayerEl) return;
+    if (audioPlayerTitle) audioPlayerTitle.textContent = title || "Audio";
+    const sub = document.getElementById("audioPlayerSub");
+    if (sub) sub.textContent = "Drag the bar to jump · ±10s to skip";
+
+    const prev = audioPlayerEl.getAttribute("src");
+    if (prev !== src) {
+        audioPlayerEl.setAttribute("src", src);
+        audioPlayerEl.load();
+        if (audioPlayerSeek) audioPlayerSeek.value = 0;
+        if (audioPlayerCurrent) audioPlayerCurrent.textContent = "0:00";
+        if (audioPlayerDuration) audioPlayerDuration.textContent = "0:00";
+    }
+
+    audioPlayerBackdrop.classList.add("visible");
+    document.body.style.overflow = "hidden";
+
+    audioPlayerEl.play().then(() => updateAudioPlayIcon(true)).catch(() => {
+        updateAudioPlayIcon(false);
+        showToast("Couldn't start playback. Try again.", "error");
+    });
+}
+
+function closeAudioPlayer() {
+    if (!audioPlayerBackdrop) return;
+    if (audioPlayerEl) {
+        audioPlayerEl.pause();
+        updateAudioPlayIcon(false);
+    }
+    audioPlayerBackdrop.classList.remove("visible");
+    document.body.style.overflow = "";
+}
+
+if (audioPlayerClose) audioPlayerClose.addEventListener("click", closeAudioPlayer);
+if (audioPlayerBackdrop) {
+    audioPlayerBackdrop.addEventListener("click", (e) => {
+        if (e.target === audioPlayerBackdrop) closeAudioPlayer();
+    });
+}
+
+if (audioPlayerPlayBtn && audioPlayerEl) {
+    audioPlayerPlayBtn.addEventListener("click", () => {
+        if (audioPlayerEl.paused) {
+            audioPlayerEl.play().then(() => updateAudioPlayIcon(true)).catch(() => showToast("Couldn't play this audio.", "error"));
+        } else {
+            audioPlayerEl.pause();
+            updateAudioPlayIcon(false);
+        }
+    });
+}
+
+document.getElementById("audioPlayerBack10")?.addEventListener("click", () => {
+    if (!audioPlayerEl) return;
+    audioPlayerEl.currentTime = Math.max(0, audioPlayerEl.currentTime - 10);
+});
+
+document.getElementById("audioPlayerFwd10")?.addEventListener("click", () => {
+    if (!audioPlayerEl) return;
+    const max = audioPlayerEl.duration || 0;
+    audioPlayerEl.currentTime = Math.min(max, audioPlayerEl.currentTime + 10);
+});
+
+if (audioPlayerEl) {
+    audioPlayerEl.addEventListener("timeupdate", () => {
+        if (audioSeeking) return;
+        const cur = audioPlayerEl.currentTime || 0;
+        const dur = audioPlayerEl.duration || 0;
+        if (audioPlayerCurrent) audioPlayerCurrent.textContent = formatAudioTime(cur);
+        if (audioPlayerDuration) audioPlayerDuration.textContent = formatAudioTime(dur);
+        if (audioPlayerSeek && dur > 0) {
+            audioPlayerSeek.value = (cur / dur) * 100;
+        }
+    });
+
+    audioPlayerEl.addEventListener("loadedmetadata", () => {
+        if (audioPlayerDuration) audioPlayerDuration.textContent = formatAudioTime(audioPlayerEl.duration || 0);
+    });
+
+    audioPlayerEl.addEventListener("ended", () => {
+        updateAudioPlayIcon(false);
+        if (audioPlayerSeek) audioPlayerSeek.value = 0;
+        if (audioPlayerCurrent) audioPlayerCurrent.textContent = "0:00";
+    });
+
+    audioPlayerEl.addEventListener("play", () => updateAudioPlayIcon(true));
+    audioPlayerEl.addEventListener("pause", () => updateAudioPlayIcon(false));
+}
+
+if (audioPlayerSeek && audioPlayerEl) {
+    audioPlayerSeek.addEventListener("input", () => {
+        audioSeeking = true;
+        const dur = audioPlayerEl.duration || 0;
+        const t = (parseFloat(audioPlayerSeek.value) / 100) * dur;
+        if (audioPlayerCurrent) audioPlayerCurrent.textContent = formatAudioTime(t);
+    });
+    audioPlayerSeek.addEventListener("change", () => {
+        const dur = audioPlayerEl.duration || 0;
+        audioPlayerEl.currentTime = (parseFloat(audioPlayerSeek.value) / 100) * dur;
+        audioSeeking = false;
+    });
+}
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && audioPlayerBackdrop?.classList.contains("visible")) {
+        closeAudioPlayer();
     }
 });
 

@@ -459,16 +459,16 @@ MOBILE MENU BUTTON + SIDEBAR DRAWER (hidden on desktop, shown at <=768px)
 .sidebar-close-btn{
     display:none;
     position:absolute;
-    top:18px;
-    right:18px;
-    width:34px;
-    height:34px;
+    top:14px;
+    right:14px;
+    width:28px;
+    height:28px;
     border-radius:50%;
     background:rgba(255,255,255,.08);
     color:#D4D7DD;
     align-items:center;
     justify-content:center;
-    font-size:15px;
+    font-size:13px;
 }
 
 .sidebar-close-btn:hover{
@@ -530,8 +530,10 @@ HERO
 }
 
 .hero h1{
-    font-size:42px;
-    margin-bottom:8px;
+    font-size:30px;
+    margin-bottom:6px;
+    font-weight:700;
+    letter-spacing:-0.02em;
 }
 
 .hero p{
@@ -988,7 +990,7 @@ GENERIC APP MODAL (replaces confirm() / prompt())
     position:fixed;
     inset:0;
     background:rgba(10,10,15,0.6);
-    z-index:1200;
+    z-index:1300;
     align-items:center;
     justify-content:center;
     padding:20px;
@@ -1327,6 +1329,13 @@ MEMORY CARD
     border:1px solid var(--card-border);
     transition:.3s;
     cursor:pointer;
+    position:relative;
+}
+
+/* When the "..." menu is open, allow the dropdown to spill outside the card */
+.memory-card.menu-open{
+    overflow:visible;
+    z-index:30;
 }
 
 .memory-card:hover{
@@ -1416,24 +1425,51 @@ body.dark .preview-hint{
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    gap:14px;
+    gap:12px;
     background:linear-gradient(160deg, #EDE9FB, #E3F0FC);
-    padding:0 20px;
+    padding:12px;
 }
 
 body.dark .audio-preview{
     background:linear-gradient(160deg, #2A2740, #1E2A38);
 }
 
-.audio-preview i{
-    font-size:30px;
-    color:#9C8FEE;
+.audio-play-btn{
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    border:none;
+    background:var(--accent);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:20px;
+    cursor:pointer;
+    box-shadow:0 6px 18px rgba(139,92,246,.35);
+    transition:.2s;
+}
+
+.audio-play-btn:hover{
+    transform:scale(1.06);
+}
+
+.audio-play-btn.playing{
+    background:#22c55e;
+}
+
+.audio-play-btn i{
+    font-size:18px;
+    color:#fff;
+    margin-left:2px;
+}
+
+.audio-play-btn.playing i{
+    margin-left:0;
 }
 
 .audio-preview audio{
-    width:100%;
-    max-width:260px;
-    height:36px;
+    display:none;
 }
 
 /* ===========================
@@ -1441,9 +1477,9 @@ CARD "..." MENU (replaces separate download/delete icon buttons)
 =========================== */
 .card-menu{
     position:absolute;
-    top:12px;
-    right:12px;
-    z-index:5;
+    top:10px;
+    right:10px;
+    z-index:40;
 }
 
 .card-menu-btn{
@@ -1483,6 +1519,7 @@ CARD "..." MENU (replaces separate download/delete icon buttons)
     box-shadow:0 14px 34px rgba(20,10,50,.25);
     padding:6px;
     flex-direction:column;
+    z-index:50;
 }
 
 .card-menu.open .card-menu-dropdown{
@@ -1588,14 +1625,29 @@ DOWNLOAD BUTTON (small, top-left of every file/image/audio card)
     padding:20px;
 }
 
-.memory-content h3{
+.memory-content h3,
+.memory-title-link{
     font-size:19px;
     margin:12px 0 8px;
+    cursor:pointer;
+    color:var(--text);
+}
+
+.memory-title-link:hover{
+    color:var(--accent);
 }
 
 .memory-content p{
     color:var(--text-secondary);
     font-size:14px;
+}
+
+.memories-tap-hint{
+    display:block;
+    font-size:13px;
+    color:var(--text-muted);
+    margin:-4px 0 18px;
+    line-height:1.4;
 }
 
 /* Summaries are clamped to 2 lines; "Read more" only appears when the
@@ -1637,23 +1689,33 @@ DOWNLOAD BUTTON (small, top-left of every file/image/audio card)
     display:inline-block;
 }
 
-.memory-actions{
+/* Trash card: icon-only restore / delete on the thumbnail */
+.trash-card-actions{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
     display:flex;
-    gap:10px;
-    margin-top:16px;
+    justify-content:space-between;
+    padding:6px 6px 7px;
+    background:linear-gradient(to top, rgba(0,0,0,.55), transparent);
+    z-index:4;
+    pointer-events:none;
 }
 
-.memory-actions button{
-    flex:1;
-    padding:10px 12px;
-    border-radius:12px;
-    font-size:13px;
-    font-weight:600;
+.trash-card-actions button{
+    pointer-events:auto;
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    border:none;
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:6px;
+    font-size:12px;
+    cursor:pointer;
     transition:.2s;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
 }
 
 .restore-btn{
@@ -1672,6 +1734,26 @@ DOWNLOAD BUTTON (small, top-left of every file/image/audio card)
 
 .delete-btn:hover{
     background:#ffcdd2;
+}
+
+/* Legacy text actions (if any remaining) */
+.memory-actions{
+    display:flex;
+    gap:10px;
+    margin-top:16px;
+}
+
+.memory-actions button{
+    flex:1;
+    padding:10px 12px;
+    border-radius:12px;
+    font-size:13px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    transition:.2s;
 }
 
 /* ===========================
@@ -1815,14 +1897,31 @@ COLLECTIONS
     cursor:not-allowed;
 }
 
+.collection-card{
+    min-width:0;
+    overflow:hidden;
+}
+
 .collection-card h3{
     font-size:19px;
     margin-bottom:6px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:100%;
 }
 
 .collection-card p{
     color:var(--text-secondary);
     font-size:14px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:100%;
+}
+
+.collections-grid > *{
+    min-width:0;
 }
 
 /* ===========================
@@ -2141,7 +2240,7 @@ TABLET
 }
 
 .collections-grid{
-    grid-template-columns:repeat(2,1fr);
+    grid-template-columns:repeat(3,1fr);
 }
 
 .sidebar h1,
@@ -2166,7 +2265,67 @@ TABLET
 }
 
 .memory-grid{
-    grid-template-columns:repeat(2,1fr);
+    grid-template-columns:repeat(3,1fr);
+}
+
+/* Tablet: allow opening sidebar to see icon labels */
+.mobile-menu-btn{
+    display:flex;
+}
+
+.sidebar.open{
+    width:280px;
+    padding:28px;
+    z-index:20;
+    box-shadow:0 0 40px rgba(0,0,0,.35);
+}
+
+.sidebar.open h1,
+.sidebar.open h3,
+.sidebar.open p,
+.sidebar.open h4{
+    display:block;
+}
+
+.sidebar.open .menu a[data-page]::after{
+    display:inline;
+}
+
+.sidebar.open .count{
+    display:inline-block;
+}
+
+.sidebar.open .types .images::after{
+    content:"Images";
+}
+.sidebar.open .types .voice-notes::after{
+    content:"Audio Files";
+}
+.sidebar.open .types .doc::after{
+    content:"Documents";
+}
+.sidebar.open .types .videos::after{
+    content:"Videos";
+}
+
+.sidebar.open .coming-soon-badge{
+    display:inline-block;
+}
+
+.sidebar.open .source{
+    justify-content:space-between;
+}
+
+.sidebar.open .storage-card{
+    display:block;
+}
+
+.sidebar.open .sidebar-close-btn{
+    display:flex;
+}
+
+.sidebar-backdrop{
+    display:block;
 }
 
 .storage-card {
@@ -2306,7 +2465,8 @@ MOBILE
 }
 
 .hero h1{
-    font-size:34px;
+    font-size:22px;
+    margin-bottom:4px;
 }
 
 .stats{
@@ -2318,15 +2478,214 @@ MOBILE
 }
 
 .memory-grid{
-    grid-template-columns:1fr;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
 }
 
 .ai-grid{
     grid-template-columns:1fr;
 }
 
+/* Collections need room for names — 2 per row, not 4 */
 .collections-grid{
-    grid-template-columns:1fr;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+}
+
+.page[data-page="collections"] .page-header-row,
+.page[data-page="trash"] .page-header-row{
+    flex-direction:column;
+    align-items:stretch;
+    gap:12px;
+    margin-bottom:16px;
+}
+
+.page[data-page="collections"] .page-header-row .btn-secondary-action{
+    width:100%;
+    justify-content:center;
+}
+
+.page[data-page="trash"] .trash-bulk-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    width:100%;
+}
+
+.page[data-page="trash"] .trash-bulk-actions .btn-secondary-action,
+.page[data-page="trash"] .trash-bulk-actions .btn-danger-action{
+    width:100%;
+    justify-content:center;
+    padding:10px 8px;
+    font-size:12.5px;
+    white-space:nowrap;
+}
+
+/* Remove the outer "box" around grids so images sit free */
+.page[data-page="memories"] .section1,
+.page[data-page="images"] .section1,
+.page[data-page="audio"] .section1,
+.page[data-page="document"] .section1,
+.page[data-page="trash"] .section1,
+.page[data-page="collections"] .section1{
+    background:transparent;
+    box-shadow:none;
+    border-radius:0;
+    padding:0;
+    margin-bottom:12px;
+    min-height:0;
+}
+
+.memories-tap-hint{
+    font-size:12px;
+    margin:-6px 0 14px;
+}
+
+/* Compact gallery-style cards on mobile */
+.memory-card{
+    border-radius:12px;
+    border:none;
+    background:transparent;
+    box-shadow:none;
+}
+
+.memory-card:hover{
+    transform:none;
+    box-shadow:none;
+}
+
+.memory-card img,
+.file-icon-placeholder,
+.audio-preview{
+    height:100px;
+    border-radius:12px 12px 0 0;
+}
+
+.file-icon-placeholder,
+.audio-preview{
+    border-radius:12px 12px 0 0;
+}
+
+.file-icon-placeholder i,
+.audio-preview i{
+    font-size:20px;
+}
+
+.preview-hint{
+    font-size:9px;
+    padding:3px 7px;
+    white-space:nowrap;
+}
+
+.audio-play-btn{
+    width:40px;
+    height:40px;
+    font-size:14px;
+}
+
+.audio-play-btn i{
+    font-size:14px;
+}
+
+.memory-content{
+    padding:6px 4px 8px;
+    background:var(--card-bg);
+    border-radius:0 0 12px 12px;
+}
+
+.memory-content h3,
+.memory-title-link{
+    font-size:10px;
+    margin:2px 0 0;
+    line-height:1.25;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+    word-break:break-word;
+    cursor:pointer;
+    color:var(--text);
+}
+
+.memory-title-link:active{
+    color:var(--accent);
+}
+
+/* Hide summary, collection select, and date on the card */
+.summary-wrap{
+    display:none !important;
+}
+
+.memory-footer{
+    display:none !important;
+}
+
+.card-details-btn{
+    display:none !important;
+}
+
+/* Trash icons stay readable on small thumbs */
+.trash-card-actions{
+    padding:4px 4px 5px;
+}
+
+.trash-card-actions button{
+    width:26px;
+    height:26px;
+    font-size:11px;
+}
+
+/* Collection cards — 2-col, readable, not cramped */
+.collection-card{
+    padding:14px 12px;
+    border-radius:16px;
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+    box-shadow:0 4px 14px var(--shadow);
+    min-height:0;
+    min-width:0;
+    overflow:hidden;
+}
+
+.collection-card > i{
+    width:40px;
+    height:40px;
+    font-size:17px;
+    border-radius:12px;
+    margin-bottom:10px;
+    flex-shrink:0;
+}
+
+.collection-card h3{
+    font-size:13px;
+    margin-bottom:4px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    line-height:1.3;
+    max-width:100%;
+}
+
+.collection-card p{
+    font-size:11px;
+    color:var(--text-secondary);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:100%;
+}
+
+.collection-card .collection-desc{
+    display:none;
+}
+
+.collection-delete-btn{
+    opacity:1;
+    width:26px;
+    height:26px;
+    font-size:11px;
+    top:10px;
+    right:10px;
 }
 
 .upload-box{
@@ -2339,6 +2698,10 @@ MOBILE
 
 .empty-message {
     font-size: 12px;
+}
+
+.page-title{
+    font-size:24px;
 }
 
 }
@@ -2393,4 +2756,438 @@ LARGE DESKTOP
 .collection-select:disabled{
     opacity:.6;
     cursor:wait;
+}
+/* ===========================
+MEMORY DETAILS MODAL
+=========================== */
+.memory-details-backdrop{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(10,10,15,0.6);
+    z-index:1200;
+    align-items:flex-end;
+    justify-content:center;
+    padding:0;
+}
+
+.memory-details-backdrop.visible{
+    display:flex;
+}
+
+.memory-details-modal{
+    position:relative;
+    width:100%;
+    max-width:420px;
+    max-height:85vh;
+    overflow-y:auto;
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+    border-radius:22px 22px 0 0;
+    padding:22px 20px 28px;
+    box-shadow:0 -10px 40px rgba(0,0,0,0.3);
+    animation: detailsSlideUp .28s ease;
+}
+
+@keyframes detailsSlideUp{
+    from{ transform:translateY(40px); opacity:0; }
+    to{ transform:translateY(0); opacity:1; }
+}
+
+@media(min-width:600px){
+    .memory-details-backdrop{
+        align-items:center;
+        padding:20px;
+    }
+    .memory-details-modal{
+        border-radius:20px;
+        max-height:80vh;
+        animation: none;
+    }
+}
+
+.memory-details-close{
+    position:absolute;
+    top:14px;
+    right:14px;
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    border:none;
+    background:rgba(0,0,0,.06);
+    color:var(--text-secondary);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:13px;
+    cursor:pointer;
+    z-index:2;
+}
+
+body.dark .memory-details-close{
+    background:rgba(255,255,255,.08);
+}
+
+.memory-details-close:hover{
+    background:var(--accent);
+    color:#fff;
+}
+
+.memory-details-header{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    margin-bottom:12px;
+    padding-right:32px;
+}
+
+.memory-details-header h3{
+    font-size:17px;
+    font-weight:700;
+    color:var(--text);
+    line-height:1.3;
+    margin:0;
+    flex:1;
+}
+
+.memory-details-actions{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:16px;
+}
+
+.memory-details-edit-all-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:100%;
+    padding:12px 16px;
+    border:none;
+    border-radius:12px;
+    background:var(--accent);
+    color:#fff;
+    font-size:14px;
+    font-weight:600;
+    font-family:inherit;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.memory-details-edit-all-btn:hover{
+    filter:brightness(1.08);
+    transform:translateY(-1px);
+}
+
+.memory-details-action-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:100%;
+    padding:11px 16px;
+    border:1px solid var(--card-border);
+    border-radius:12px;
+    background:transparent;
+    color:var(--text-secondary);
+    font-size:13.5px;
+    font-weight:600;
+    font-family:inherit;
+    text-decoration:none;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.memory-details-action-btn:hover{
+    border-color:var(--accent);
+    color:var(--accent);
+}
+
+.memory-details-action-btn.danger{
+    color:#c81e3a;
+    border-color:#FFE3E6;
+    background:#FFF5F6;
+}
+
+.memory-details-action-btn.danger:hover{
+    background:#e11d48;
+    border-color:#e11d48;
+    color:#fff;
+}
+
+body.dark .memory-details-action-btn.danger{
+    background:rgba(225,29,72,.12);
+    border-color:rgba(225,29,72,.25);
+}
+
+.memory-details-tag{
+    display:inline-block;
+    margin-bottom:10px;
+}
+
+.memory-details-summary{
+    color:var(--text-secondary);
+    font-size:13.5px;
+    line-height:1.55;
+    margin-bottom:16px;
+    white-space:pre-wrap;
+}
+
+.memory-details-meta{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    margin-bottom:8px;
+}
+
+.memory-details-meta-row{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+}
+
+.memory-details-meta-row label{
+    font-size:11px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--text-muted);
+}
+
+.memory-details-meta-row .collection-select{
+    max-width:100%;
+    width:100%;
+    font-size:13px;
+}
+
+.memory-details-date{
+    font-size:12.5px;
+    color:var(--text-secondary);
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+
+.memory-details-date i{
+    color:var(--accent);
+}
+
+/* Desktop still shows the in-card read-more / summary; mobile uses the Details button */
+.card-details-btn{
+    display:none;
+}
+
+/* ===========================
+AUDIO PLAYER SHEET
+=========================== */
+.audio-player-backdrop{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(10,10,15,0.65);
+    z-index:1250;
+    align-items:flex-end;
+    justify-content:center;
+    padding:0;
+}
+
+.audio-player-backdrop.visible{
+    display:flex;
+}
+
+.audio-player-sheet{
+    position:relative;
+    width:100%;
+    max-width:420px;
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+    border-radius:24px 24px 0 0;
+    padding:28px 24px 36px;
+    box-shadow:0 -12px 40px rgba(0,0,0,0.35);
+    text-align:center;
+    animation: detailsSlideUp .28s ease;
+}
+
+@media(min-width:600px){
+    .audio-player-backdrop{
+        align-items:center;
+        padding:20px;
+    }
+    .audio-player-sheet{
+        border-radius:22px;
+        animation:none;
+    }
+}
+
+.audio-player-close{
+    position:absolute;
+    top:14px;
+    right:14px;
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    border:none;
+    background:rgba(0,0,0,.06);
+    color:var(--text-secondary);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:13px;
+    cursor:pointer;
+}
+
+body.dark .audio-player-close{
+    background:rgba(255,255,255,.08);
+}
+
+.audio-player-close:hover{
+    background:var(--accent);
+    color:#fff;
+}
+
+.audio-player-icon{
+    width:64px;
+    height:64px;
+    margin:4px auto 14px;
+    border-radius:18px;
+    background:linear-gradient(160deg, #EDE9FB, #E3F0FC);
+    color:#8B5CF6;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:26px;
+}
+
+body.dark .audio-player-icon{
+    background:linear-gradient(160deg, #2A2740, #1E2A38);
+    color:#C4B5FD;
+}
+
+#audioPlayerTitle{
+    font-size:17px;
+    font-weight:700;
+    color:var(--text);
+    margin:0 0 4px;
+    padding:0 28px;
+    line-height:1.3;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+}
+
+.audio-player-sub{
+    font-size:13px;
+    color:var(--text-muted);
+    margin:0 0 22px;
+}
+
+.audio-player-times{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    font-weight:600;
+    color:var(--text-secondary);
+    margin-bottom:6px;
+    font-variant-numeric:tabular-nums;
+}
+
+.audio-player-seek{
+    -webkit-appearance:none;
+    appearance:none;
+    width:100%;
+    height:6px;
+    border-radius:100px;
+    background:var(--card-border);
+    outline:none;
+    margin-bottom:22px;
+    cursor:pointer;
+}
+
+.audio-player-seek::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    appearance:none;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid #fff;
+    box-shadow:0 2px 8px rgba(139,92,246,.4);
+    cursor:pointer;
+}
+
+.audio-player-seek::-moz-range-thumb{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid #fff;
+    box-shadow:0 2px 8px rgba(139,92,246,.4);
+    cursor:pointer;
+}
+
+.audio-player-controls{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:22px;
+}
+
+.audio-ctrl-btn{
+    width:48px;
+    height:48px;
+    border-radius:50%;
+    border:1px solid var(--card-border);
+    background:var(--bg, transparent);
+    color:var(--text);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:1px;
+    font-size:16px;
+    cursor:pointer;
+    transition:.2s;
+    position:relative;
+}
+
+.audio-ctrl-btn span{
+    font-size:9px;
+    font-weight:700;
+    line-height:1;
+    opacity:.7;
+}
+
+.audio-ctrl-btn:hover{
+    border-color:var(--accent);
+    color:var(--accent);
+}
+
+.audio-ctrl-main{
+    width:64px;
+    height:64px;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    font-size:22px;
+    box-shadow:0 8px 22px rgba(139,92,246,.4);
+}
+
+.audio-ctrl-main:hover{
+    filter:brightness(1.08);
+    color:#fff;
+    border:none;
+}
+
+.audio-ctrl-main i{
+    margin-left:2px;
+}
+
+.audio-ctrl-main.playing i{
+    margin-left:0;
+}
+
+#audioPlayerElement{
+    display:none;
 }
