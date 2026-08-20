@@ -166,7 +166,7 @@ function normalizeCollection(collectionName, existingCollections) {
 }
 
 async function analyzeFile(filePath, existingCollections = [], retries = 2) {
-  const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
   const prompt = buildPrompt(existingCollections);
 
   let requestContent;

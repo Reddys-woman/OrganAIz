@@ -1,5 +1,6 @@
 .env
 node_modules
-
+*.env
 #this folder used to ignore files not want to be sent to cloud for ex our API KEY 
 uploads/*
+test-files
